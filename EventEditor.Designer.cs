@@ -29,15 +29,23 @@
             App = new ColumnHeader();
             Payload = new ColumnHeader();
             btnAdd = new Button();
+            btnLoad = new Button();
+            btnSave = new Button();
+            btnCancel = new Button();
+            btnOK = new Button();
+            openFileDialog1 = new OpenFileDialog();
+            saveFileDialog1 = new SaveFileDialog();
+            btnTest = new Button();
+            btnShowMIU = new Button();
             SuspendLayout();
             // 
             // propertyGrid1
             // 
             propertyGrid1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             propertyGrid1.HelpVisible = false;
-            propertyGrid1.Location = new Point(12, 334);
+            propertyGrid1.Location = new Point(12, 319);
             propertyGrid1.Name = "propertyGrid1";
-            propertyGrid1.Size = new Size(776, 104);
+            propertyGrid1.Size = new Size(776, 125);
             propertyGrid1.TabIndex = 0;
             propertyGrid1.ToolbarVisible = false;
             propertyGrid1.PropertyValueChanged += propertyGrid1_PropertyValueChanged;
@@ -52,10 +60,11 @@
             listView1.Location = new Point(12, 12);
             listView1.MultiSelect = false;
             listView1.Name = "listView1";
-            listView1.Size = new Size(776, 286);
+            listView1.Size = new Size(776, 272);
             listView1.TabIndex = 1;
             listView1.UseCompatibleStateImageBehavior = false;
             listView1.View = View.Details;
+            listView1.ItemChecked += listView1_ItemChecked;
             listView1.SelectedIndexChanged += listView1_SelectedIndexChanged;
             // 
             // Enabled
@@ -73,7 +82,8 @@
             // 
             // btnAdd
             // 
-            btnAdd.Location = new Point(12, 304);
+            btnAdd.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnAdd.Location = new Point(12, 290);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(75, 23);
             btnAdd.TabIndex = 2;
@@ -81,14 +91,102 @@
             btnAdd.UseVisualStyleBackColor = true;
             btnAdd.Click += btnAdd_Click;
             // 
+            // btnLoad
+            // 
+            btnLoad.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnLoad.Location = new Point(470, 290);
+            btnLoad.Name = "btnLoad";
+            btnLoad.Size = new Size(75, 23);
+            btnLoad.TabIndex = 3;
+            btnLoad.Text = "Load";
+            btnLoad.UseVisualStyleBackColor = true;
+            btnLoad.MouseClick += btnLoad_MouseClick;
+            // 
+            // btnSave
+            // 
+            btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnSave.Location = new Point(551, 290);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(75, 23);
+            btnSave.TabIndex = 4;
+            btnSave.Text = "Save";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.MouseClick += btnSave_MouseClick;
+            // 
+            // btnCancel
+            // 
+            btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCancel.Location = new Point(713, 290);
+            btnCancel.Name = "btnCancel";
+            btnCancel.Size = new Size(75, 23);
+            btnCancel.TabIndex = 5;
+            btnCancel.Text = "Cancel";
+            btnCancel.UseVisualStyleBackColor = true;
+            btnCancel.Click += btnCancel_Click;
+            // 
+            // btnOK
+            // 
+            btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnOK.Location = new Point(632, 290);
+            btnOK.Name = "btnOK";
+            btnOK.Size = new Size(75, 23);
+            btnOK.TabIndex = 6;
+            btnOK.Text = "OK";
+            btnOK.UseVisualStyleBackColor = true;
+            btnOK.MouseClick += btnOK_MouseClick;
+            // 
+            // openFileDialog1
+            // 
+            openFileDialog1.DefaultExt = "json";
+            openFileDialog1.FileName = "openFileDialog1";
+            openFileDialog1.Filter = "JSON files|*.json";
+            openFileDialog1.Title = "Load Event List";
+            // 
+            // saveFileDialog1
+            // 
+            saveFileDialog1.DefaultExt = "json";
+            saveFileDialog1.Filter = "JSON files|*.json";
+            saveFileDialog1.Title = "Save Event List";
+            // 
+            // btnTest
+            // 
+            btnTest.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnTest.Location = new Point(180, 290);
+            btnTest.Name = "btnTest";
+            btnTest.Size = new Size(75, 23);
+            btnTest.TabIndex = 7;
+            btnTest.Text = "Test";
+            btnTest.UseVisualStyleBackColor = true;
+            btnTest.Click += btnTest_Click;
+            // 
+            // btnShowMIU
+            // 
+            btnShowMIU.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnShowMIU.Location = new Point(261, 290);
+            btnShowMIU.Name = "btnShowMIU";
+            btnShowMIU.Size = new Size(75, 23);
+            btnShowMIU.TabIndex = 8;
+            btnShowMIU.Text = "Show MIU";
+            btnShowMIU.UseVisualStyleBackColor = true;
+            btnShowMIU.Click += btnShowMIU_Click;
+            // 
             // EventEditor
             // 
+            AcceptButton = btnOK;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            CancelButton = btnCancel;
+            ClientSize = new Size(800, 456);
+            Controls.Add(btnShowMIU);
+            Controls.Add(btnTest);
+            Controls.Add(btnOK);
+            Controls.Add(btnCancel);
+            Controls.Add(btnSave);
+            Controls.Add(btnLoad);
             Controls.Add(btnAdd);
             Controls.Add(listView1);
             Controls.Add(propertyGrid1);
+            MinimizeBox = false;
             Name = "EventEditor";
             Text = "EventEditor";
             Load += EventEditor_Load;
@@ -96,12 +194,19 @@
         }
 
         #endregion
-
-        private PropertyGrid propertyGrid1;
         private ListView listView1;
         private ColumnHeader App;
         private ColumnHeader Payload;
         private ColumnHeader Enabled;
         private Button btnAdd;
+        private Button btnLoad;
+        private Button btnSave;
+        private Button btnCancel;
+        private Button btnOK;
+        private OpenFileDialog openFileDialog1;
+        private SaveFileDialog saveFileDialog1;
+        private Button btnTest;
+        private Button btnShowMIU;
+        internal PropertyGrid propertyGrid1;
     }
 }

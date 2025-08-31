@@ -18,12 +18,16 @@ namespace StreamStartingTimer {
             InitializeComponent();
         }
         const string TimeFormat = @"mm\:ss";
-        public List<TimerEvent> TimerEvents;
+        public List<TimerEvent> FormTimerEvents = new List<TimerEvent>();
 
         private int SelectedTimerEvent;
 
-        private void EventEditor_Load(object sender, EventArgs e) {
-            foreach (TimerEvent timerEvent in TimerEvents) {
+        private static readonly frmMiuCommands FrmMiuCommands = new frmMiuCommands();
+
+        private void UpdateListView() {
+            listView1.BeginUpdate();
+            listView1.Items.Clear();
+            foreach (TimerEvent timerEvent in FormTimerEvents) {
                 ListViewItem item = new ListViewItem();
                 //item.SubItems.Add(timerEvent.Columns[0]);
                 item.SubItems.Add(timerEvent.Columns[1]);
@@ -32,18 +36,26 @@ namespace StreamStartingTimer {
                 listView1.Items[listView1.Items.Count - 1].Checked = timerEvent.Enabled;
                 listView1.Items[listView1.Items.Count - 1].SubItems[0].Text = timerEvent.Columns[0];
             }
-
+            listView1.EndUpdate();
         }
 
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e) {
+        private void EventEditor_Load(object sender, EventArgs e) {
+            UpdateListView();
+        }
+
+        private void UpdatePropertyGrid() {
             if (listView1.SelectedIndices.Count > 0) {
                 SelectedTimerEvent = listView1.SelectedIndices[0];
-                propertyGrid1.SelectedObject = TimerEvents[SelectedTimerEvent];
+                propertyGrid1.SelectedObject = FormTimerEvents[SelectedTimerEvent];
             }
         }
 
+        private void listView1_SelectedIndexChanged(object sender, EventArgs e) {
+            UpdatePropertyGrid();
+        }
+
         private void propertyGrid1_PropertyValueChanged(object s, PropertyValueChangedEventArgs e) {
-            switch (e.ChangedItem.Label) {
+            /*switch (e.ChangedItem.Label) {
                 case "Enabled":
                     listView1.Items[SelectedTimerEvent].Checked = Convert.ToBoolean(e.ChangedItem.Value);
                     break;
@@ -57,8 +69,11 @@ namespace StreamStartingTimer {
                 case "Payload":
                     listView1.Items[SelectedTimerEvent].SubItems[2].Text = Convert.ToString(e.ChangedItem.Value);
                     break;
-            }
-            MessageBox.Show(e.ChangedItem.Label);
+            }*/
+            FormTimerEvents = FormTimerEvents.OrderByDescending(o => o.Time.TotalSeconds).ToList();
+            UpdateListView();
+            FormTimerEvents[SelectedTimerEvent].UpdateMiuCmdId();
+            //MessageBox.Show(e.ChangedItem.Label);
 
             //listView1.Items[SelectedTimerEvent].SubItems[0].Text = propertyGrid1.Get
             //listView1.Items[SelectedTimerEvent].SubItems[1].Text = TimerEvents[SelectedTimerEvent].Columns[1];
@@ -66,7 +81,7 @@ namespace StreamStartingTimer {
         }
 
         private void btnAdd_Click(object sender, EventArgs e) {
-            TimerEvents.Add(new TimerEvent(false, 0, EventType.VNyan, ""));
+            FormTimerEvents.Add(new TimerEvent(false, false, 0, EventType.VNyan, ""));
             ListViewItem item = new ListViewItem();
             //item.SubItems.Add(timerEvent.Columns[0]);
             item.SubItems.Add("VNyan");
@@ -81,6 +96,48 @@ namespace StreamStartingTimer {
             //}
             listView1.Items[listView1.Items.Count - 1].Selected = true;
 
+        }
+
+        private void btnLoad_MouseClick(object sender, MouseEventArgs e) {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK) {
+                FormTimerEvents = Shared.LoadEvents(openFileDialog1.FileName);
+                UpdateListView();
+            }
+        }
+
+        private void btnSave_MouseClick(object sender, MouseEventArgs e) {
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
+                Shared.SaveEvents(saveFileDialog1.FileName, FormTimerEvents);
+            }
+        }
+
+        private void btnOK_MouseClick(object sender, MouseEventArgs e) {
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e) {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+
+        private void listView1_ItemChecked(object sender, ItemCheckedEventArgs e) {
+            int n = 0;
+            foreach (ListViewItem item in listView1.Items) {
+                FormTimerEvents[n].Enabled = item.Checked;
+                n++;
+            }
+            UpdatePropertyGrid();
+        }
+
+        private void btnTest_Click(object sender, EventArgs e) {
+            if (listView1.SelectedIndices.Count > 0) {
+                FormTimerEvents[listView1.SelectedIndices[0]].Fire();
+            }
+        }
+
+        private void btnShowMIU_Click(object sender, EventArgs e) {
+            FrmMiuCommands.Show();
         }
     }
 }
