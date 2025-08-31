@@ -1,14 +1,21 @@
 # Stream Starting countdown timer
 Allows you to show an accurate countdown at the start of stream, and fire events at specified times.  
 Events can be VNyan websockets, MixItUp commands or external executables  
+* 100% Free and Open Source  
+* No ads, no premium version, no subscription, no monetization of any sort  
+* Lightweight portable executable
+* No registry settings, just config.json files in the exe directory
 
 ## Quick Start
-1. Add a window capture in OBS capturing this application, put this on your "Stream Starting" scene
-2. Add a crop filter to remove the top toolbar and the bottom status bar
-3. Add a Chroma key filter to greenscreen the clock
-4. Click the Clock Font button and set your desired font and size
-5. Close the application
-6. Run StreamStartingTimer.exe -m 5 for a five minute countdown
+1. Requires [.net 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). This should already be installed on most modern versions of Windows
+2. Download the .zip file from the [latest release](https://github.com/LumKitty/StreamStartingTimer/releases) and extract to wherever you keep your streamer tools
+3. Run StreamStartingTimer.exe
+4. Add a window capture in OBS capturing this application, put this on your "Stream Starting" scene
+5. Add a crop filter to remove the top toolbar and the bottom status bar
+6. Add a Chroma key filter to greenscreen the clock
+7. Click the Clock Font button and set your desired font and size
+8. Close the application
+9. Run StreamStartingTimer.exe -m 5 for a five minute countdown
 
 ## Usage
 This application is designed to be started from the commandline or launched from a Stream Deck. Commandline options:  
@@ -21,6 +28,12 @@ This application is designed to be started from the commandline or launched from
 While the timer is running, you can used the +30s and +1m buttons to add time to the timer, e.g. if you are going to be running late
 
 If the application was started with ```-m```, ```-s``` or ```-p``` it will automatically close once the timer expired. If it is manually started it will remain open.
+
+## Usage from StreamDeck
+1. Install [BarRaider's Advanced Launcher](https://marketplace.elgato.com/product/advanced-launcher-d9a289e4-9f61-4613-9f86-0069f5897125)
+2. Add the Advanced launcher to a button on your stream deck
+3. Click "Choose File" and point to StreamStartingTimer.exe
+4. Add commandline arguments as described above
 
 ## Configuration
 The clock font can be customised to match your overall aesthetic. Click the "Clock Font" text to choose your font, change the colour by entering a hex code immediately to right of the font button.  
@@ -49,6 +62,11 @@ Will be run exactly as if you'd typed it at a command prompt (e.g. powershell.ex
 
 ## Testing
 Running the application without commandline parameters will open it in setup/test mode. Immediately to the right of the +1m button you can set a time, in seconds for the timer to start at. The application will not quit when the timer expires  
+
+## StatusBar indicators
+When the application starts, the indicators in the bottom left corner will be yellow and we will attempt to connect to VNyan and MixItUp  
+When they turn green we have successfully connected
+If they turn red, connection has timed out, but we will keep retrying. This is a visual indicator to actually start your streaming software! :D
 
 ## Advanced usage
 Special use cases that need a bit more work:
