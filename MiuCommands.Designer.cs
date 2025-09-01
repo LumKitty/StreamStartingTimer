@@ -41,7 +41,7 @@
             listView1.Location = new Point(-1, -1);
             listView1.MultiSelect = false;
             listView1.Name = "listView1";
-            listView1.Size = new Size(802, 453);
+            listView1.Size = new Size(414, 453);
             listView1.TabIndex = 0;
             listView1.UseCompatibleStateImageBehavior = false;
             listView1.View = View.Details;
@@ -61,10 +61,10 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(412, 450);
             Controls.Add(listView1);
             Name = "frmMiuCommands";
-            Text = "Mix It Up Commands";
+            Text = "Mix It Up Commands (double click to copy command name/id)";
             Load += frmMiuCommands_Load;
             Shown += frmMiuCommands_Shown;
             ResumeLayout(false);

@@ -61,6 +61,7 @@
             // 
             // toolStrip1
             // 
+            toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
             toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, txtSeconds, toolStripSeparator3, toolStripLabel1, txtBackColor, toolStripSeparator1, btnFont, txtForeColor, toolStripSeparator4, toolStripLabel2, cmbAlign, toolStripSeparator2, btnEvents });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
@@ -77,6 +78,7 @@
             btnStart.Name = "btnStart";
             btnStart.Size = new Size(28, 24);
             btnStart.Text = "4";
+            btnStart.ToolTipText = "Start the timer";
             btnStart.Click += btnStart_Click;
             // 
             // btnPause
@@ -89,6 +91,7 @@
             btnPause.Name = "btnPause";
             btnPause.Size = new Size(28, 24);
             btnPause.Text = ";";
+            btnPause.ToolTipText = "Pause the timer";
             btnPause.Click += btnPause_Click;
             // 
             // btnReset
@@ -101,6 +104,7 @@
             btnReset.Name = "btnReset";
             btnReset.Size = new Size(28, 24);
             btnReset.Text = "q";
+            btnReset.ToolTipText = "Reset timer enable editing";
             btnReset.Click += btnReset_Click;
             // 
             // btnAdd30s
@@ -112,6 +116,7 @@
             btnAdd30s.Name = "btnAdd30s";
             btnAdd30s.Size = new Size(36, 24);
             btnAdd30s.Text = "+30s";
+            btnAdd30s.ToolTipText = "Add 30 seconds to running timer";
             btnAdd30s.Click += btnAdd30s_Click;
             // 
             // btnAdd60s
@@ -123,6 +128,7 @@
             btnAdd60s.Name = "btnAdd60s";
             btnAdd60s.Size = new Size(36, 24);
             btnAdd60s.Text = "+1m";
+            btnAdd60s.ToolTipText = "Add 1 minute to running timer";
             btnAdd60s.Click += btnAdd60s_Click;
             // 
             // txtSeconds
@@ -131,6 +137,7 @@
             txtSeconds.Name = "txtSeconds";
             txtSeconds.Size = new Size(40, 27);
             txtSeconds.Text = "300";
+            txtSeconds.ToolTipText = "Length of timer (in seconds)";
             txtSeconds.KeyPress += txtSeconds_KeyPress;
             txtSeconds.TextChanged += txtSeconds_TextChanged;
             // 
@@ -151,6 +158,7 @@
             txtBackColor.Name = "txtBackColor";
             txtBackColor.Size = new Size(43, 27);
             txtBackColor.Text = "00FF00";
+            txtBackColor.ToolTipText = "Background colour of timer (Use a Chroma Key filter in OBS set to the same colour)";
             txtBackColor.KeyPress += txtColor_KeyPress;
             txtBackColor.TextChanged += txtBackColor_TextChanged;
             // 
@@ -167,6 +175,7 @@
             btnFont.Name = "btnFont";
             btnFont.Size = new Size(68, 24);
             btnFont.Text = "Clock Font";
+            btnFont.ToolTipText = "Change the clock font & size";
             btnFont.Click += btnFont_Click;
             // 
             // txtForeColor
@@ -175,6 +184,7 @@
             txtForeColor.Name = "txtForeColor";
             txtForeColor.Size = new Size(43, 27);
             txtForeColor.Text = "000000";
+            txtForeColor.ToolTipText = "Clock colour";
             txtForeColor.KeyPress += txtColor_KeyPress;
             txtForeColor.TextChanged += txtForeColor_TextChanged;
             // 
@@ -194,8 +204,10 @@
             cmbAlign.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbAlign.IntegralHeight = false;
             cmbAlign.Items.AddRange(new object[] { "Top Left", "Top Centre", "Top Right", "Left", "Centre", "Right", "Bottom Left", "Bottom Centre", "Bottom Right" });
+            cmbAlign.Margin = new Padding(1, -1, 1, 0);
             cmbAlign.Name = "cmbAlign";
-            cmbAlign.Size = new Size(121, 27);
+            cmbAlign.Size = new Size(121, 28);
+            cmbAlign.ToolTipText = "Set this to be the same as the alignment in your OBS window capture transform";
             cmbAlign.DropDownClosed += cmbAlign_DropDownClosed;
             // 
             // toolStripSeparator2
@@ -211,6 +223,7 @@
             btnEvents.Name = "btnEvents";
             btnEvents.Size = new Size(68, 24);
             btnEvents.Text = "Edit Events";
+            btnEvents.ToolTipText = "Open the event editor";
             btnEvents.Click += btnEvents_Click;
             // 
             // statusStrip1
@@ -249,7 +262,7 @@
             // 
             lblCountdown.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             lblCountdown.BackColor = Color.Lime;
-            lblCountdown.Font = new Font("Bedstead", 24F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblCountdown.Font = new Font("Arial", 72F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCountdown.Location = new Point(0, 25);
             lblCountdown.Name = "lblCountdown";
             lblCountdown.Size = new Size(794, 367);

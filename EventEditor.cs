@@ -21,6 +21,7 @@ namespace StreamStartingTimer {
         public List<TimerEvent> FormTimerEvents = new List<TimerEvent>();
 
         private int SelectedTimerEvent;
+        private bool ChangesMade = false;
 
         private static readonly frmMiuCommands FrmMiuCommands = new frmMiuCommands();
 
@@ -73,6 +74,7 @@ namespace StreamStartingTimer {
             FormTimerEvents = FormTimerEvents.OrderByDescending(o => o.Time.TotalSeconds).ToList();
             UpdateListView();
             FormTimerEvents[SelectedTimerEvent].UpdateMiuCmdId();
+            ChangesMade = true;
             //MessageBox.Show(e.ChangedItem.Label);
 
             //listView1.Items[SelectedTimerEvent].SubItems[0].Text = propertyGrid1.Get
@@ -95,30 +97,50 @@ namespace StreamStartingTimer {
             //    listView1.Items[n].Selected = false;
             //}
             listView1.Items[listView1.Items.Count - 1].Selected = true;
-
+            ChangesMade = true;
+            propertyGrid1.Focus();
         }
 
         private void btnLoad_MouseClick(object sender, MouseEventArgs e) {
             if (openFileDialog1.ShowDialog() == DialogResult.OK) {
                 FormTimerEvents = Shared.LoadEvents(openFileDialog1.FileName);
                 UpdateListView();
+                ChangesMade = false;
             }
+            listView1.Focus();
         }
 
         private void btnSave_MouseClick(object sender, MouseEventArgs e) {
             if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
                 Shared.SaveEvents(saveFileDialog1.FileName, FormTimerEvents);
+                ChangesMade = false;
+            }
+            listView1.Focus();
+        }
+
+        private void CloseForm(DialogResult result) {
+            if (ChangesMade) {
+                if (MessageBox.Show("You have not saved your events.\r\n" +
+                                     "They will work for this session only\r\n" +
+                                     "\r\n" +
+                                     "Close editor without saving?",
+                                     "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                                     == DialogResult.Yes) {
+                    this.DialogResult = result;
+                    this.Close();
+                }
+            } else {
+                this.DialogResult = result;
+                this.Close();
             }
         }
 
         private void btnOK_MouseClick(object sender, MouseEventArgs e) {
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            CloseForm(DialogResult.OK);
         }
 
         private void btnCancel_Click(object sender, EventArgs e) {
-            this.DialogResult = DialogResult.Cancel;
-            this.Close();
+            CloseForm(DialogResult.Cancel);
         }
 
         private void listView1_ItemChecked(object sender, ItemCheckedEventArgs e) {
@@ -134,10 +156,20 @@ namespace StreamStartingTimer {
             if (listView1.SelectedIndices.Count > 0) {
                 FormTimerEvents[listView1.SelectedIndices[0]].Fire();
             }
+            propertyGrid1.Focus();
         }
 
         private void btnShowMIU_Click(object sender, EventArgs e) {
             FrmMiuCommands.Show();
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e) {
+            if (listView1.SelectedIndices.Count > 0) {
+                SelectedTimerEvent = listView1.SelectedIndices[0];
+                FormTimerEvents.Remove(FormTimerEvents[SelectedTimerEvent]);
+                UpdateListView();
+                listView1.Focus();
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.AccessControl;
@@ -31,6 +32,9 @@ namespace StreamStartingTimer {
                 txtSeconds.Text = StartTime.ToString();
                 StartTimer();
                 QuitWhenDone = true;
+            } else {
+                QuitWhenDone = false;
+                this.Text = this.Text += " (Setup/test mode)";
             }
             // StartTimer();
         }
@@ -91,6 +95,23 @@ namespace StreamStartingTimer {
                 Shared.VNyanURL = Config.VNyanURL;
                 Shared.MixItUpURL = Config.MixItUpURL;
                 Shared.MixItUpPlatform = Config.MixItUpPlatform;
+            } else {
+                Font font = lblCountdown.Font;
+                fontDialog.Font = font;
+                txtBackColor.Text = "00FF00";
+                txtForeColor.Text = "000000";
+                cmbAlign.SelectedIndex = 0;
+                SetTextAlignment(0);
+                Shared.VNyanURL = "ws://localhost:8000/vnyan";
+                Shared.MixItUpURL = "http://localhost:8911/api/v2";
+                Shared.MixItUpPlatform = "twitch";
+                if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
+                    Process myProcess = new Process();
+                    myProcess.StartInfo.UseShellExecute = true;
+                    myProcess.StartInfo.FileName = "https://github.com/LumKitty/StreamStartingTimer/blob/master/README.md";
+                    myProcess.Start();
+                    myProcess.Dispose();
+                }
             }
         }
 

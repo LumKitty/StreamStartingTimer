@@ -343,7 +343,14 @@ namespace StreamStartingTimer
                         ConfigFile = o.Config;
                     }
                     if (o.Past != null) {
-
+                        DateTime dateTime = DateTime.Now;
+                        DateTime trgTime;
+                        if (dateTime.Minute < o.Past) {
+                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, (int)o.Past, 0, 0);
+                        } else {
+                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour+1, (int)o.Past, 0, 0);
+                        }
+                        StartTime = (int)(trgTime - DateTime.Now).TotalSeconds;
                     }
                     if (o.Seconds != null ) {
                         StartTime += (int)o.Seconds;

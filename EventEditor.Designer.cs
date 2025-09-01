@@ -37,6 +37,7 @@
             saveFileDialog1 = new SaveFileDialog();
             btnTest = new Button();
             btnShowMIU = new Button();
+            btnDelete = new Button();
             SuspendLayout();
             // 
             // propertyGrid1
@@ -46,7 +47,7 @@
             propertyGrid1.Location = new Point(12, 319);
             propertyGrid1.Name = "propertyGrid1";
             propertyGrid1.Size = new Size(776, 125);
-            propertyGrid1.TabIndex = 0;
+            propertyGrid1.TabIndex = 1;
             propertyGrid1.ToolbarVisible = false;
             propertyGrid1.PropertyValueChanged += propertyGrid1_PropertyValueChanged;
             // 
@@ -61,7 +62,7 @@
             listView1.MultiSelect = false;
             listView1.Name = "listView1";
             listView1.Size = new Size(776, 272);
-            listView1.TabIndex = 1;
+            listView1.TabIndex = 0;
             listView1.UseCompatibleStateImageBehavior = false;
             listView1.View = View.Details;
             listView1.ItemChecked += listView1_ItemChecked;
@@ -97,7 +98,7 @@
             btnLoad.Location = new Point(470, 290);
             btnLoad.Name = "btnLoad";
             btnLoad.Size = new Size(75, 23);
-            btnLoad.TabIndex = 3;
+            btnLoad.TabIndex = 6;
             btnLoad.Text = "Load";
             btnLoad.UseVisualStyleBackColor = true;
             btnLoad.MouseClick += btnLoad_MouseClick;
@@ -108,7 +109,7 @@
             btnSave.Location = new Point(551, 290);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(75, 23);
-            btnSave.TabIndex = 4;
+            btnSave.TabIndex = 7;
             btnSave.Text = "Save";
             btnSave.UseVisualStyleBackColor = true;
             btnSave.MouseClick += btnSave_MouseClick;
@@ -119,18 +120,18 @@
             btnCancel.Location = new Point(713, 290);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(75, 23);
-            btnCancel.TabIndex = 5;
+            btnCancel.TabIndex = 9;
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = true;
             btnCancel.Click += btnCancel_Click;
             // 
             // btnOK
             // 
-            btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnOK.Location = new Point(632, 290);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(75, 23);
-            btnOK.TabIndex = 6;
+            btnOK.TabIndex = 8;
             btnOK.Text = "OK";
             btnOK.UseVisualStyleBackColor = true;
             btnOK.MouseClick += btnOK_MouseClick;
@@ -151,10 +152,10 @@
             // btnTest
             // 
             btnTest.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnTest.Location = new Point(180, 290);
+            btnTest.Location = new Point(174, 290);
             btnTest.Name = "btnTest";
             btnTest.Size = new Size(75, 23);
-            btnTest.TabIndex = 7;
+            btnTest.TabIndex = 4;
             btnTest.Text = "Test";
             btnTest.UseVisualStyleBackColor = true;
             btnTest.Click += btnTest_Click;
@@ -162,21 +163,31 @@
             // btnShowMIU
             // 
             btnShowMIU.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnShowMIU.Location = new Point(261, 290);
+            btnShowMIU.Location = new Point(255, 290);
             btnShowMIU.Name = "btnShowMIU";
             btnShowMIU.Size = new Size(75, 23);
-            btnShowMIU.TabIndex = 8;
+            btnShowMIU.TabIndex = 5;
             btnShowMIU.Text = "Show MIU";
             btnShowMIU.UseVisualStyleBackColor = true;
             btnShowMIU.Click += btnShowMIU_Click;
             // 
+            // btnDelete
+            // 
+            btnDelete.Location = new Point(93, 290);
+            btnDelete.Name = "btnDelete";
+            btnDelete.Size = new Size(75, 23);
+            btnDelete.TabIndex = 3;
+            btnDelete.Text = "Delete";
+            btnDelete.UseVisualStyleBackColor = true;
+            btnDelete.Click += btnDelete_Click;
+            // 
             // EventEditor
             // 
-            AcceptButton = btnOK;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = btnCancel;
             ClientSize = new Size(800, 456);
+            ControlBox = false;
+            Controls.Add(btnDelete);
             Controls.Add(btnShowMIU);
             Controls.Add(btnTest);
             Controls.Add(btnOK);
@@ -208,5 +219,6 @@
         private Button btnTest;
         private Button btnShowMIU;
         internal PropertyGrid propertyGrid1;
+        private Button btnDelete;
     }
 }
