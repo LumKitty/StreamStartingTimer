@@ -5,6 +5,8 @@ Events can be VNyan websockets, MixItUp commands or external executables
 * No ads, no premium version, no subscription, no monetization of any sort  
 * Lightweight portable executable
 * No registry settings, just config.json files in the exe directory
+<img width="691" height="295" alt="image" src="https://github.com/user-attachments/assets/30d01f4d-a5ca-4be1-ad2f-aa6b84800528" />
+
 
 ## Quick Start
 1. Requires [.net 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). This should already be installed on most modern versions of Windows
