@@ -27,7 +27,7 @@ This application is designed to be started from the commandline or launched from
 ```-c FileName``` Load a different configuration file instead of DefaultConfig.json  
 ```-e Filename``` Load a different events file instead of DefaultEvents.json (see the events section for more details)  
 
-While the timer is running, you can used the +30s and +1m buttons to add time to the timer, e.g. if you are going to be running late
+While the timer is running, you can use the +30s and +1m buttons to add time to the timer, e.g. if you are going to be running late
 
 If the application was started with ```-m```, ```-s``` or ```-p``` it will automatically close once the timer expired. If it is manually started it will remain open.
 
@@ -51,7 +51,7 @@ There are three types of event: VNyan, MixItUp and EXE. They all have the same p
 ```Payload``` What to actually run (see the individual event descriptions below)  
 ```Refire``` If you add to the timer after this event has fired, should it run a second time  
 ```Time``` When the timer reaches this value, the event will fire  
-If you save your events as DefaultEvent.json they will be loaded automatically at startup, otherwise you must specify them on the commandline with ```-e```
+If you save your events as DefaultEvents.json they will be loaded automatically at startup, otherwise you must specify them on the commandline with ```-e```
 
 ### VNyan event
 Sends the payload as a websocket message to VNyan
