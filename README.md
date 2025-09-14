@@ -5,7 +5,8 @@ Events can be VNyan websockets, MixItUp commands or external executables
 * No ads, no premium version, no subscription, no monetization of any sort  
 * Lightweight portable executable (around 1MB in size)
 * No registry settings, just config.json files in the exe directory
-<img width="691" height="295" alt="image" src="https://github.com/user-attachments/assets/30d01f4d-a5ca-4be1-ad2f-aa6b84800528" />
+<img width="809" height="785" alt="image" src="https://github.com/user-attachments/assets/7426f618-508f-4720-8524-ff4a6b096586" />
+
 
 
 ## Quick Start
