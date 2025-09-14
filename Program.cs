@@ -20,192 +20,304 @@ namespace StreamStartingTimer
 {
 
     public enum EventType {
+        None = -1,
         VNyan = 0,
         MixItUp = 1,
         EXE = 2
     }
+    public enum MIUPlatforms {
+        Twitch = 0,
+        YouTube = 1,
+        Trovo = 2
+    }
 
-    public class TimerEvent {
-        const string TimeFormat = @"mm\:ss";
-        private bool _Enabled;
-        private bool _ReFire;
-        private TimeSpan _Time;
-        private EventType _EventType;
-        private string _Payload;
-        public string MiuCmdID;
-        public string MiuCmdArgs;
-        public bool HasFired;
-        [CategoryAttribute("Event"), DescriptionAttribute("Will this event fire")]
-        public bool Enabled {
-            get {
-                return _Enabled;
-            }
-            set {
-                _Enabled = value;
-            }
-        }
-        [CategoryAttribute("Event"), DescriptionAttribute("Remaining time when this event fires")]
-        public TimeSpan Time {
-            get {
-                return _Time;
-            }
-            set {
-                _Time = value;
-            }
-        }
-        [CategoryAttribute("Event"), DescriptionAttribute("Application to launch")]
-        public EventType EventType {
-            get {
-                return _EventType;
-            }
-            set {
-                _EventType = value;
-            }
-        }
+    public abstract class TimerEvent {
+        [CategoryAttribute("Timing"), DescriptionAttribute("Will this event fire")]
+        public bool Enabled { get; set; }
+
         [CategoryAttribute("Event"), DescriptionAttribute("What to run")]
-        public string Payload {
-            get {
-                return _Payload;
-            }
-            set {
-                _Payload = value;
-            }
+        public abstract string Payload { get; set; }
+
+        [CategoryAttribute("Timing"), DescriptionAttribute("If timer is increased, will this fire a second (or more) time?")]
+        public bool Refire { get; set; }
+        [CategoryAttribute("Timing"), DescriptionAttribute("Remaining time when this event fires")]
+        public TimeSpan Time { get; set; }
+        public bool HasFired;
+        public abstract EventType EventType { get; }
+        protected abstract void _Fire();
+        public void Fire() {
+            Task.Run(() => _Fire());
         }
-        [CategoryAttribute("Event"), DescriptionAttribute("If timer is increased, will this fire a second (or more) time?")]
-        public bool Refire {
-            get {
-                return _ReFire;
-            }
-            set {
-                _ReFire = value;
-            }
+        public virtual void TestFire() {
+            Task.Run(() => _Fire());
         }
+
+        [Browsable(false)]
+        public abstract JObject JSON { get; }
+
         [Browsable(false)]
         public string[] Columns {
             get {
                 string[] Result = new string[3];
-                Result[0] = _Time.ToString(TimeFormat);
-                Result[1] = _EventType.ToString();
-                Result[2] = _Payload;
+                Result[0] = Time.ToString(Shared.TimeFormat);
+                Result[1] = EventType.ToString();
+                Result[2] = Payload;
                 return Result;
             }
         }
-        [Browsable(false)]
-        public JObject JSON {
+        protected void SetEnabled(dynamic JSON) {
+            bool tempEnabled = false;
+            try { bool.TryParse(JSON.Enabled.ToString(), out tempEnabled); } catch { }
+            Enabled = tempEnabled;
+        }
+        protected void SetRefire(dynamic JSON) {
+            bool tempRefire = false;
+            try { bool.TryParse(JSON.ReFire.ToString(), out tempRefire); } catch { }
+            Refire = tempRefire;
+        }
+        protected void SetTime(dynamic JSON) {
+            Int32 tempTime = 0;
+            if (!(Int32.TryParse(JSON.Time.ToString(), out tempTime))) { tempTime = 0; }
+            Time = TimeSpan.FromSeconds(tempTime);
+        }
+        protected void SetPayload(dynamic JSON) {
+            try { Payload = JSON.Payload.ToString(); } catch { Payload = ""; }
+        }
+    }
+
+    public class VNyanEvent : TimerEvent {
+        [CategoryAttribute("Event"), DescriptionAttribute("Event Type")]
+        public override EventType EventType { get; } = EventType.VNyan;
+        [CategoryAttribute("Event"), DescriptionAttribute("Websocket message to send")]
+        public override string Payload { get; set; }
+        
+        protected override async void _Fire() {
+            Shared.wsClient.SendAsync(Payload, WebSocketMessageType.Text, Shared.CT);
+        }
+        public VNyanEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload) {
+            Enabled = _Enabled;
+            Refire = _ReFire;
+            Time = TimeSpan.FromSeconds(_Time);
+            Payload = _Payload;
+        }
+        public VNyanEvent() {
+            Enabled = false;
+            Refire = false;
+            Time = TimeSpan.FromSeconds(0);
+            Payload = "";
+        }
+        public VNyanEvent(dynamic JSON) {
+            SetEnabled(JSON);
+            SetRefire(JSON);
+            SetTime(JSON);
+            SetPayload(JSON);
+        }
+        public override JObject JSON {
             get {
                 return new JObject(
-                    new JProperty("Enabled", _Enabled),
-                    new JProperty("ReFire", _ReFire),
-                    new JProperty("Time", _Time.TotalSeconds),
-                    new JProperty("EventType", _EventType.ToString()),
-                    new JProperty("Payload", _Payload)
+                    new JProperty("EventType", EventType.ToString()),
+                    new JProperty("Enabled", Enabled),
+                    new JProperty("ReFire", Refire),
+                    new JProperty("Time", Time.TotalSeconds),
+                    new JProperty("Payload", Payload)
                 );
             }
         }
-        private async void _Fire() {
-            switch (_EventType) {
-                case EventType.VNyan:
-                    Shared.wsClient.SendAsync(_Payload, WebSocketMessageType.Text, Shared.CT);
-                    break;
-                case EventType.MixItUp:
-                    if (MiuCmdID != "") {
-                        string Content = "{ \"Platform\": \"" + Shared.MixItUpPlatform + "\", \"Arguments\": \"" + MiuCmdArgs + "\" }";
-                        var jsonData = new StringContent(Content, Encoding.ASCII);
-                        jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                        string Response = "";
-                        int httpStatus = 0;
-                        var PostResult = await Shared.client.PostAsync(Shared.MixItUpURL + "/commands/" + MiuCmdID, jsonData);
-                        Response = PostResult.Content.ReadAsStringAsync().Result;
-                        httpStatus = ((int)PostResult.StatusCode);
-                        Console.WriteLine(PostResult.ToString());
-                        PostResult.Dispose();
-                    } else {
-                        Shared.AutoClosingMessageBox.Show(MiuCmdID, "Can't fire "+_Payload, 10000);
-                    }
-                        break;
-                case EventType.EXE:
-                    string FileName;
-                    string Parameters;
-                    int i;
-                    if (_Payload[0] == '"') {
-                        FileName = _Payload.Substring(1);
-                        i = FileName.IndexOf('"');
-                        Parameters = FileName.Substring(i + 1).Trim();
-                        FileName = FileName.Substring(0, i);
-                    } else {
-                        i = _Payload.IndexOf(' ');
-                        if (i > 0) {
-                            Parameters = _Payload.Substring(i + 1).Trim();
-                            FileName = _Payload.Substring(0, i);
-                        } else {
-                            Parameters = "";
-                            FileName = _Payload;
-                        }
-                    }
-                    Process EXE = new Process();
-                    EXE.StartInfo.FileName = FileName;
-                    EXE.StartInfo.Arguments = Parameters;
-                    EXE.StartInfo.UseShellExecute = false;
-                    EXE.StartInfo.RedirectStandardInput = false;
-                    EXE.StartInfo.RedirectStandardOutput = false;
-                    EXE.StartInfo.RedirectStandardError = false;
-                    EXE.EnableRaisingEvents = true;
-                    //Log("Start process");
-                    EXE.Start();
+    }
 
-                    break;
+    public class MIUEvent : TimerEvent {
+
+        [CategoryAttribute("Event"), DescriptionAttribute("Event Type")]
+        public override EventType EventType { get; } = EventType.MixItUp;
+        [CategoryAttribute("Event"), DescriptionAttribute("MIU Command to run")]
+        public override string Payload { get; set; }
+        [CategoryAttribute("Event"), DescriptionAttribute("Command arguments")]
+        public string Arguments { get; set; }
+        [CategoryAttribute("Event"), DescriptionAttribute("Streaming Platform")]
+        public MIUPlatforms Platform { get; set; }
+
+        protected override async void _Fire() {
+            string MiuCmdID = GetMiuCmdId();
+            if (MiuCmdID != "") {
+                string Content = "{ \"Platform\": \"" + Platform + "\", \"Arguments\": \"" + Arguments + "\" }";
+                var jsonData = new StringContent(Content, Encoding.ASCII);
+                jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                string Response = "";
+                int httpStatus = 0;
+                var PostResult = await Shared.client.PostAsync(Shared.MixItUpURL + "/commands/" + MiuCmdID, jsonData);
+                Response = PostResult.Content.ReadAsStringAsync().Result;
+                httpStatus = ((int)PostResult.StatusCode);
+                Console.WriteLine(PostResult.ToString());
+                PostResult.Dispose();
+            } else {
+                Shared.AutoClosingMessageBox.Show(MiuCmdID, "Can't fire " + Payload, 10000);
             }
         }
-        public void Fire() {
+
+        private string GetMiuCmdId() {
+            if (Shared.miuCommands.ContainsKey(Payload)) {
+                return Shared.miuCommands[Payload];
+            } else {
+                Shared.AutoClosingMessageBox.Show("command not found: " + Payload, "MixItUpError", 10000);
+                return "";
+            }
+        }
+        
+        public override void TestFire() {
+            if (GetMiuCmdId() == "") { Shared.InitMIU(Shared.MixItUpURL); }
             Task.Run(() => _Fire());
         }
-        public void UpdateMiuCmdId() {
-            string Command;
-            if (_Payload.Contains(' ')) {
-                int n = _Payload.IndexOf(' ');
-                Command = _Payload.Substring(0, n).Trim().ToLower();
-                MiuCmdArgs = _Payload.Substring(n + 1).Trim();
-            } else {
-                Command = _Payload.Trim().ToLower();
-                MiuCmdArgs = "";
-            }
-            if (Shared.miuCommands.ContainsKey(Command)) {
-                MiuCmdID = Shared.miuCommands[Command];
-            } else if (Shared.miuCommands.Values.Contains(Command) ) { 
-                MiuCmdID = Command;
-            //} else { 
-            //    Shared.AutoClosingMessageBox.Show("command not found: "+Command,"MixItUpError", 10000); return;
-            }
-        }
 
-        public TimerEvent(bool Enabled, bool ReFire, int Time, EventType EventType, string Payload) {
-            _Enabled = Enabled;
-            _ReFire = ReFire;
-            _Time = TimeSpan.FromSeconds(Time);
-            _EventType = EventType;
-            _Payload = Payload;
-            if ((EventType == EventType.MixItUp) && (_Payload != "") && Shared.MixItUpConnected) { 
-                UpdateMiuCmdId(); 
-            } else {
-                MiuCmdID = "";
-                MiuCmdArgs = "";
+        /*public void UpdateMiuCmdId() {
+            if (MiuCmdID == "") {
+                if (Shared.miuCommands.ContainsKey(Payload)) {
+                    MiuCmdID = Shared.miuCommands[Payload];
+                } else {
+                    Shared.AutoClosingMessageBox.Show("command not found: " + Payload, "MixItUpError", 10000); return;
+                }
             }
+        }*/
+
+        public MIUEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload, string _Arguments, MIUPlatforms _Platform) {
+            Enabled = _Enabled;
+            Refire = _ReFire;
+            Time = TimeSpan.FromSeconds(_Time);
+            Payload = _Payload;
+            Arguments = _Arguments;
+            Platform = _Platform;
         }
-        public TimerEvent() {
-            _Enabled = false;
-            _ReFire = false;
-            _Time = TimeSpan.FromSeconds(0);
-            _EventType = EventType.VNyan;
-            _Payload = "";
+        public MIUEvent() {
+            Enabled = false;
+            Refire = false;
+            Time = TimeSpan.FromSeconds(0);
+            Payload = "";
+            Arguments = "";
+            Platform = Shared.DefaultMixItUpPlatform;
+        }
+        public MIUEvent(dynamic JSON) {
+            SetEnabled(JSON);
+            SetRefire(JSON);
+            SetTime(JSON);
+            SetPayload(JSON);
+            try { Arguments = JSON.Arguments.ToString(); } catch { Arguments = ""; }
+            try {
+                Shared.GetMiuPlatform(JSON.Platform.ToString(), Shared.DefaultMixItUpPlatform);
+            } catch { Platform = Shared.DefaultMixItUpPlatform; }
+            
+        }
+        public override JObject JSON {
+            get {
+                return new JObject(
+                    new JProperty("EventType", EventType.ToString()),
+                    new JProperty("Enabled", Enabled),
+                    new JProperty("ReFire", Refire),
+                    new JProperty("Time", Time.TotalSeconds),
+                    new JProperty("Payload", Payload),
+                    new JProperty("Arguments", Arguments),
+                    new JProperty("Platform", Platform.ToString())
+                );
+            }
         }
     }
+
+    public class ExeEvent : TimerEvent {
+        [CategoryAttribute("Event"), DescriptionAttribute("Event Type")]
+        public override EventType EventType { get; } = EventType.EXE;
+        [CategoryAttribute("Event"), DescriptionAttribute("Full path to EXE to run")]
+        public override string Payload { get; set; }
+        [CategoryAttribute("Event"), DescriptionAttribute("Parameters to pass to EXE")]
+        public string Arguments { get; set; }
+
+
+        [CategoryAttribute("Event"), DescriptionAttribute("Working directory of the process")]
+        public string StartIn { get; set; }
+
+        [CategoryAttribute("Event"), DescriptionAttribute("How to show the window")]
+        public ProcessWindowStyle WindowStyle { get; set; }
+
+        [CategoryAttribute("Event"), DescriptionAttribute("Use Shell Execute")]
+        public bool ShellExecute { get; set; }
+
+
+        protected override async void _Fire() {
+            Process EXE = new Process();
+            EXE.StartInfo.FileName = Payload;
+            EXE.StartInfo.Arguments = Arguments;
+            EXE.StartInfo.UseShellExecute = ShellExecute;
+            EXE.StartInfo.RedirectStandardInput = false;
+            EXE.StartInfo.RedirectStandardOutput = false;
+            EXE.StartInfo.RedirectStandardError = false;
+            EXE.StartInfo.WindowStyle = WindowStyle;
+            EXE.StartInfo.WorkingDirectory = StartIn;
+            EXE.EnableRaisingEvents = true;
+            //Log("Start process");
+            EXE.Start();
+        }
+        public ExeEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload, string _Arguments, string _StartIn, bool _ShellExecute, ProcessWindowStyle _WindowStyle) {
+            Enabled = _Enabled;
+            Refire = _ReFire;
+            Time = TimeSpan.FromSeconds(_Time);
+            Payload = _Payload;
+            Arguments = _Arguments;
+            StartIn = _StartIn;
+            ShellExecute = _ShellExecute;
+            WindowStyle = _WindowStyle;
+        }
+        public ExeEvent() {
+            Enabled = false;
+            Refire = false;
+            Time = TimeSpan.FromSeconds(0);
+            Payload = "";
+            Arguments = "";
+            StartIn = "";
+            ShellExecute = false;
+            WindowStyle = ProcessWindowStyle.Minimized;
+        }
+        public ExeEvent(dynamic JSON) {
+            SetEnabled(JSON);
+            SetRefire(JSON);
+            SetTime(JSON);
+            SetPayload(JSON);
+            try { Arguments = JSON.Arguments.ToString(); } catch { Arguments = ""; }
+            try { StartIn = JSON.StartIn.ToString(); } catch { StartIn = ""; }
+            string tempWindowStyle;
+            try { tempWindowStyle = JSON.WindowStyle.ToString(); } catch { tempWindowStyle = "Normal"; }
+            switch (tempWindowStyle) {
+                case "Normal"   : WindowStyle = ProcessWindowStyle.Normal;    break;
+                case "Minimized": WindowStyle = ProcessWindowStyle.Minimized; break;
+                case "Maximized": WindowStyle = ProcessWindowStyle.Maximized; break;
+                case "Hidden"   : WindowStyle = ProcessWindowStyle.Hidden;    break;
+            }
+            bool tempShellExecute = false;
+            try { bool.TryParse(JSON.ShellExecute.ToString(), out tempShellExecute); } catch { }
+            ShellExecute = tempShellExecute;
+        }
+            public override JObject JSON {
+            get {
+                return new JObject(
+                    new JProperty("EventType", EventType.ToString()),
+                    new JProperty("Enabled", Enabled),
+                    new JProperty("ReFire", Refire),
+                    new JProperty("Time", Time.TotalSeconds),
+                    new JProperty("Payload", Payload),
+                    new JProperty("Arguments", Arguments),
+                    new JProperty("StartIn", StartIn),
+                    new JProperty("ShellExecute", ShellExecute),
+                    new JProperty("WindowStyle", WindowStyle.ToString())
+                );
+            }
+        }
+    }
+
  
     public static class Shared {
+        public const string Version = "v0.2";
+        public const string TimeFormat = @"mm\:ss";
         public static bool VNyanConnected = false;
         public static bool MixItUpConnected = false;
         public static string VNyanURL;
         public static string MixItUpURL;
-        public static string MixItUpPlatform;
+        public static MIUPlatforms DefaultMixItUpPlatform;
         public static WatsonWsClient wsClient;
         public static CancellationToken CT = new System.Threading.CancellationToken();
         public static HttpClient client = new HttpClient();
@@ -241,44 +353,45 @@ namespace StreamStartingTimer
             return (miuCommands.Count > 0);
         }
 
-        public static List<TimerEvent> LoadEvents(string filename) {
-            bool tempEnabled = false;
-            bool tempReFire = false;
-            int tempTime;
-            EventType tempEventType=EventType.VNyan;
-            string tempPayload;
-            bool Success;
-            List<TimerEvent> result = new List<TimerEvent>();
-            dynamic TimerConfig = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(filename));
-            foreach (dynamic timerEvent in TimerConfig.Events) {
-                Success = true;
-                switch (timerEvent.EventType.ToString().ToLower()) {
-                    case "vnyan": tempEventType = EventType.VNyan; break;
-                    case "mixitup": tempEventType = EventType.MixItUp; break;
-                    case "exe": tempEventType = EventType.EXE; break;
-                    default: Success = false; break;
-                }
+        public static MIUPlatforms GetMiuPlatform(string Platform, MIUPlatforms Default) {
+            switch (Platform.ToLower()) {
+                case "twitch":  return MIUPlatforms.Twitch;
+                case "youtube": return MIUPlatforms.YouTube;
+                case "trovo":   return MIUPlatforms.Trovo;
+                default:        return Default;
+            }
+        }
 
-                try { bool.TryParse(timerEvent.Enabled.ToString(), out tempEnabled); } catch { }
-                try { bool.TryParse(timerEvent.ReFire.ToString(), out tempReFire); } catch { }
-                if (!(Int32.TryParse(timerEvent.Time.ToString(), out tempTime))) { Success = false; }
-                tempPayload = timerEvent.Payload.ToString();
-                if (Success) {
-                    result.Add(new TimerEvent(tempEnabled, tempReFire, tempTime, tempEventType, tempPayload));
-                } else {
-                    MessageBox.Show("Could not parse:\r\n"+timerEvent.ToString()+"Skipping this event");
-                }
-                    
+        public static List<TimerEvent> LoadEvents(string filename) {
+            int FileVersion = 0;
+            List<TimerEvent> result = new List<TimerEvent>();
+            dynamic JSON = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(filename));
+
+            if (!(Int32.TryParse(JSON.FileVersion.ToString(), out FileVersion))) { FileVersion = 0; }
+
+            switch (FileVersion) {
+                case 0:
+                    MessageBox.Show("Unfortunately we can't read event lists from beta 1.0", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    break;
+                case 1:
+                    foreach (dynamic JSONEvent in JSON.Events) {
+                        switch (JSONEvent.EventType.ToString().ToLower()) {
+                            case "vnyan": result.Add(new VNyanEvent(JSONEvent)); break;
+                            case "mixitup": result.Add(new MIUEvent(JSONEvent)); break;
+                            case "exe": result.Add(new ExeEvent(JSONEvent)); break;
+                        }
+                    }
+                    break;
             }
             return result;
         }
         public static void SaveEvents(string filename, List<TimerEvent> TimerEvents) {
-            
             JArray EventsJson = new JArray();
             foreach (TimerEvent timerEvent in TimerEvents) {
                 EventsJson.Add(timerEvent.JSON);
             }
             JObject Config = new JObject(
+                new JProperty("FileVersion", 1),
                 new JProperty("Events", EventsJson)
             );
             File.WriteAllText(filename, Config.ToString());

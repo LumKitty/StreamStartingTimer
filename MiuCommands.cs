@@ -37,11 +37,7 @@ namespace StreamStartingTimer {
         }
 
         private void listView1_MouseDoubleClick(object sender, MouseEventArgs e) {
-            if (listView1.Items[listView1.SelectedIndices[0]].Text.Contains(' ')) {
-                System.Windows.Forms.Clipboard.SetText(listView1.Items[listView1.SelectedIndices[0]].SubItems[1].Text);
-            } else {
-                System.Windows.Forms.Clipboard.SetText(listView1.Items[listView1.SelectedIndices[0]].Text);
-            }
+            System.Windows.Forms.Clipboard.SetText(listView1.Items[listView1.SelectedIndices[0]].Text);
         }
     }
 }

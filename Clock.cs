@@ -39,9 +39,8 @@ namespace StreamStartingTimer {
             // StartTimer();
         }
 
-        const string Version = "v0.1";
-        const string TimeFormat = @"mm\:ss";
-        const string DefaultStatusBar = Version + " - github.com/LumKitty";
+        //const string TimeFormat = @"mm\:ss";
+        const string DefaultStatusBar = Shared.Version + " - github.com/LumKitty";
         string _ConfigFile;
         Color TextBackgroundColor;
         private List<TimerEvent> TimerEvents = new();
@@ -61,7 +60,7 @@ namespace StreamStartingTimer {
                 new JProperty("Height", this.Height),
                 new JProperty("VNyanURL", Shared.VNyanURL),
                 new JProperty("MixItUpURL", Shared.MixItUpURL),
-                new JProperty("MixItUpPlatform", Shared.MixItUpPlatform)
+                new JProperty("MixItUpPlatform", Shared.DefaultMixItUpPlatform.ToString())
             );
             File.WriteAllText(_ConfigFile, Config.ToString());
         }
@@ -94,7 +93,7 @@ namespace StreamStartingTimer {
                 lblCountdown.Font = font;
                 Shared.VNyanURL = Config.VNyanURL;
                 Shared.MixItUpURL = Config.MixItUpURL;
-                Shared.MixItUpPlatform = Config.MixItUpPlatform;
+                Shared.DefaultMixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch);
             } else {
                 Font font = lblCountdown.Font;
                 fontDialog.Font = font;
@@ -104,7 +103,7 @@ namespace StreamStartingTimer {
                 SetTextAlignment(0);
                 Shared.VNyanURL = "ws://localhost:8000/vnyan";
                 Shared.MixItUpURL = "http://localhost:8911/api/v2";
-                Shared.MixItUpPlatform = "twitch";
+                Shared.DefaultMixItUpPlatform = MIUPlatforms.Twitch;
                 if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
                     Process myProcess = new Process();
                     myProcess.StartInfo.UseShellExecute = true;
@@ -141,7 +140,7 @@ namespace StreamStartingTimer {
                 if (Shared.InitMIU(Shared.MixItUpURL)) {
                     lblMixItUp.BackColor = Color.Green;
                     Shared.MixItUpConnected = true;
-                    UpdateMiuTimerEvents(ref TimerEvents);
+                    //UpdateMiuTimerEvents(ref TimerEvents);
                 } else {
                     lblMixItUp.BackColor = Color.Red;
                     Shared.MixItUpConnected = false;
@@ -149,13 +148,11 @@ namespace StreamStartingTimer {
             } while (!Shared.MixItUpConnected);
         }
 
-        private void UpdateMiuTimerEvents(ref List<TimerEvent> timerEvents) {
-            foreach (TimerEvent timerEvent in timerEvents) {
-                if ((timerEvent.EventType == EventType.MixItUp) && (timerEvent.MiuCmdID == "")) {
-                    timerEvent.UpdateMiuCmdId();
-                }
+        /*private void UpdateMiuTimerEvents(ref List<TimerEvent> timerEvents) {
+            foreach (MIUEvent timerEvent in timerEvents.OfType<MIUEvent>().ToList()  ) {
+                timerEvent.UpdateMiuCmdId();
             }
-        }
+        }*/
 
         private void Connect() {
             if (Shared.VNyanURL.Length > 0) {
@@ -238,7 +235,7 @@ namespace StreamStartingTimer {
         }
 
         private void UpdateClock(int SecondsToGo) {
-            lblCountdown.Text = TimeSpan.FromSeconds(SecondsToGo).ToString(TimeFormat);
+            lblCountdown.Text = TimeSpan.FromSeconds(SecondsToGo).ToString(Shared.TimeFormat);
         }
         private void UpdateClock(string SecondsToGo) {
             int Seconds;
@@ -255,33 +252,40 @@ namespace StreamStartingTimer {
             SecondsToGo--;
             UpdateClock(SecondsToGo);
 
-            toolStripProgressBar1.Value = toolStripProgressBar1.Maximum - SecondsToGo;
-            for (n = 0; n < TimerEvents.Count; n++) {
-                if ((TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !TimerEvents[n].HasFired) {
-                    StatusLabel = "Next Event in " + (SecondsToGo - TimerEvents[n].Time.TotalSeconds) + "s: " + TimerEvents[n].Time.ToString(TimeFormat) + " (" + TimerEvents[n].EventType + ") " + TimerEvents[n].Payload;
-                    i = n + 1;
-                    while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == TimerEvents[n].Time.TotalSeconds) {
-                        if (!TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
-                        i++;
-                    }
-                    if (ExtraSimultaneousEvents > 0) {
-                        StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
-                    }
-                    break;
-                } else if ((TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !TimerEvents[n].HasFired) {
-                    i = n;
-                    StatusLabel = "Firing event:";
-                    while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
-                        if (!TimerEvents[i].HasFired) {
-                            StatusLabel += " (" + TimerEvents[i].EventType + ") " + TimerEvents[i].Payload;
-                            if (!TimerEvents[i].Refire) { TimerEvents[i].HasFired = true; }
-                            TimerEvents[i].Fire();
-                        }
-                        i++;
-                    }
-                    break;
-                }
+            n = toolStripProgressBar1.Maximum - SecondsToGo;
+            if (n < 0) {
+                toolStripProgressBar1.Value = 0;
+            } else {
+                toolStripProgressBar1.Value = n;
             }
+                for (n = 0; n < TimerEvents.Count; n++) {
+                    if (TimerEvents[n].Enabled) {
+                        if ((TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !TimerEvents[n].HasFired) {
+                            StatusLabel = "Next Event in " + (SecondsToGo - TimerEvents[n].Time.TotalSeconds) + "s: " + TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + TimerEvents[n].EventType + ") " + TimerEvents[n].Payload;
+                            i = n + 1;
+                            while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == TimerEvents[n].Time.TotalSeconds) {
+                                if (!TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
+                                i++;
+                            }
+                            if (ExtraSimultaneousEvents > 0) {
+                                StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
+                            }
+                            break;
+                        } else if ((TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !TimerEvents[n].HasFired) {
+                            i = n;
+                            StatusLabel = "Firing event:";
+                            while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
+                                if (!TimerEvents[i].HasFired) {
+                                    StatusLabel += " (" + TimerEvents[i].EventType + ") " + TimerEvents[i].Payload;
+                                    if (!TimerEvents[i].Refire) { TimerEvents[i].HasFired = true; }
+                                    TimerEvents[i].Fire();
+                                }
+                                i++;
+                            }
+                            break;
+                        }
+                    }
+                }
             lblNextEvent.Text = StatusLabel;
             if (SecondsToGo <= 0) {
                 timer1.Stop();

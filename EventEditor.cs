@@ -33,15 +33,11 @@ namespace StreamStartingTimer {
                 //item.SubItems.Add(timerEvent.Columns[0]);
                 item.SubItems.Add(timerEvent.Columns[1]);
                 item.SubItems.Add(timerEvent.Columns[2]);
+                item.Checked = timerEvent.Enabled;
+                item.SubItems[0].Text = timerEvent.Columns[0];
                 listView1.Items.Add(item);
-                listView1.Items[listView1.Items.Count - 1].Checked = timerEvent.Enabled;
-                listView1.Items[listView1.Items.Count - 1].SubItems[0].Text = timerEvent.Columns[0];
             }
             listView1.EndUpdate();
-        }
-
-        private void EventEditor_Load(object sender, EventArgs e) {
-            UpdateListView();
         }
 
         private void UpdatePropertyGrid() {
@@ -73,32 +69,13 @@ namespace StreamStartingTimer {
             }*/
             FormTimerEvents = FormTimerEvents.OrderByDescending(o => o.Time.TotalSeconds).ToList();
             UpdateListView();
-            FormTimerEvents[SelectedTimerEvent].UpdateMiuCmdId();
+            // FormTimerEvents[SelectedTimerEvent].UpdateMiuCmdId();
             ChangesMade = true;
             //MessageBox.Show(e.ChangedItem.Label);
 
             //listView1.Items[SelectedTimerEvent].SubItems[0].Text = propertyGrid1.Get
             //listView1.Items[SelectedTimerEvent].SubItems[1].Text = TimerEvents[SelectedTimerEvent].Columns[1];
             //listView1.Items[SelectedTimerEvent].SubItems[2].Text = TimerEvents[SelectedTimerEvent].Columns[2];
-        }
-
-        private void btnAdd_Click(object sender, EventArgs e) {
-            FormTimerEvents.Add(new TimerEvent(false, false, 0, EventType.VNyan, ""));
-            ListViewItem item = new ListViewItem();
-            //item.SubItems.Add(timerEvent.Columns[0]);
-            item.SubItems.Add("VNyan");
-            item.SubItems.Add("");
-            listView1.Items.Add(item);
-            listView1.Items[listView1.Items.Count - 1].Checked = false;
-            listView1.Items[listView1.Items.Count - 1].SubItems[0].Text = "00:00";
-            listView1.Items[listView1.Items.Count - 1].SubItems[1].Text = "VNyan";
-            listView1.Items[listView1.Items.Count - 1].SubItems[2].Text = "";
-            //for (int n = 0; n < listView1.Items.Count - 1; n++) {
-            //    listView1.Items[n].Selected = false;
-            //}
-            listView1.Items[listView1.Items.Count - 1].Selected = true;
-            ChangesMade = true;
-            propertyGrid1.Focus();
         }
 
         private void btnLoad_MouseClick(object sender, MouseEventArgs e) {
@@ -154,7 +131,7 @@ namespace StreamStartingTimer {
 
         private void btnTest_Click(object sender, EventArgs e) {
             if (listView1.SelectedIndices.Count > 0) {
-                FormTimerEvents[listView1.SelectedIndices[0]].Fire();
+                FormTimerEvents[listView1.SelectedIndices[0]].TestFire();
             }
             propertyGrid1.Focus();
         }
@@ -170,6 +147,41 @@ namespace StreamStartingTimer {
                 UpdateListView();
                 listView1.Focus();
             }
+        }
+
+        private void AddEvent(TimerEvent timerEvent) {
+            FormTimerEvents.Add(timerEvent);
+            ListViewItem item = new ListViewItem();
+            //item.SubItems.Add(timerEvent.Columns[0]);
+            item.SubItems.Add(timerEvent.EventType.ToString());
+            item.SubItems.Add(timerEvent.Payload);
+            listView1.Items.Add(item);
+            listView1.Items[listView1.Items.Count - 1].Checked = false;
+            listView1.Items[listView1.Items.Count - 1].SubItems[0].Text = "00:00";
+            listView1.Items[listView1.Items.Count - 1].SubItems[1].Text = timerEvent.EventType.ToString();
+            listView1.Items[listView1.Items.Count - 1].SubItems[2].Text = "";
+            //for (int n = 0; n < listView1.Items.Count - 1; n++) {
+            //    listView1.Items[n].Selected = false;
+            //}
+            listView1.Items[listView1.Items.Count - 1].Selected = true;
+            ChangesMade = true;
+            propertyGrid1.Focus();
+        }
+
+        private void AddVNyan_Click(object sender, EventArgs e) {
+            AddEvent(new VNyanEvent());
+        }
+
+        private void AddMIU_Click(object sender, EventArgs e) {
+            AddEvent(new MIUEvent());
+        }
+
+        private void AddExe_Click(object sender, EventArgs e) {
+            AddEvent(new ExeEvent());
+        }
+
+        private void EventEditor_Shown(object sender, EventArgs e) {
+            UpdateListView();
         }
     }
 }

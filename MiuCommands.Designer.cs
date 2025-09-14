@@ -64,7 +64,7 @@
             ClientSize = new Size(412, 450);
             Controls.Add(listView1);
             Name = "frmMiuCommands";
-            Text = "Mix It Up Commands (double click to copy command name/id)";
+            Text = "Mix It Up Commands (double click to copy command name)";
             Load += frmMiuCommands_Load;
             Shown += frmMiuCommands_Shown;
             ResumeLayout(false);
