@@ -35,7 +35,6 @@
             btnReset = new ToolStripButton();
             btnAdd30s = new ToolStripButton();
             btnAdd60s = new ToolStripButton();
-            txtSeconds = new ToolStripTextBox();
             toolStripSeparator3 = new ToolStripSeparator();
             btnEvents = new ToolStripButton();
             btnConfig = new ToolStripButton();
@@ -53,7 +52,7 @@
             // toolStrip1
             // 
             toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
-            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, txtSeconds, toolStripSeparator3, btnEvents, btnConfig });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, toolStripSeparator3, btnEvents, btnConfig });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(794, 27);
@@ -121,16 +120,6 @@
             btnAdd60s.Text = "+1m";
             btnAdd60s.ToolTipText = "Add 1 minute to running timer";
             btnAdd60s.Click += btnAdd60s_Click;
-            // 
-            // txtSeconds
-            // 
-            txtSeconds.MaxLength = 5;
-            txtSeconds.Name = "txtSeconds";
-            txtSeconds.Size = new Size(40, 27);
-            txtSeconds.Text = "300";
-            txtSeconds.ToolTipText = "Length of timer (in seconds)";
-            txtSeconds.KeyPress += txtSeconds_KeyPress;
-            txtSeconds.TextChanged += txtSeconds_TextChanged;
             // 
             // toolStripSeparator3
             // 
@@ -242,7 +231,6 @@
         private ToolStripSeparator toolStripSeparator3;
         private ToolStripProgressBar toolStripProgressBar1;
         private ToolStripStatusLabel lblNextEvent;
-        private ToolStripTextBox txtSeconds;
         private ToolStripButton btnStart;
         private ToolStripButton btnPause;
         private ToolStripButton btnReset;

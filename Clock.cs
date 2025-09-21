@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.AccessControl;
@@ -12,14 +13,24 @@ using WatsonWebsocket;
 namespace StreamStartingTimer {
     public partial class Clock : Form {
         private int SecondsToGo;
+        private Binding bndTestTime;
+        private Binding bndSeconds;
+
+        private void TimeSpanToString(object sender, ConvertEventArgs cevent) {
+            if (cevent.DesiredType != typeof(string)) return;
+            cevent.Value = ((TimeSpan)cevent.Value).ToString(Shared.TimeFormat);
+        }
+
         public Clock(int StartTime = 0, string EventsFile = "::", string ConfigFile = "::") {
             InitializeComponent();
+            SecondsToGo = 0;
             lblCountdown.DataBindings.Add("BackColor", Shared.CurSettings, "BGCol");
             lblCountdown.DataBindings.Add("ForeColor", Shared.CurSettings, "FGCol");
             lblCountdown.DataBindings.Add("Font", Shared.CurSettings, "Font");
             lblCountdown.DataBindings.Add("TextAlign", Shared.CurSettings, "Alignment");
-            //this.DataBindings.Add("Location", Shared.CurSettings, "Location");
-            //this.DataBindings.Add("Size", Shared.CurSettings, "Dimensions");
+            bndTestTime = new Binding ("Text", Shared.CurSettings, "TestTime");
+            bndTestTime.Format += new ConvertEventHandler(TimeSpanToString);
+            lblCountdown.DataBindings.Add(bndTestTime);
 
             if (ConfigFile != "::") {
                 _ConfigFile = ConfigFile;
@@ -36,17 +47,14 @@ namespace StreamStartingTimer {
             }
             LoadConfig();
             if (StartTime > 0) {
-                txtSeconds.Text = StartTime.ToString();
-                StartTimer();
+                StartTimer(StartTime);
                 QuitWhenDone = true;
             } else {
                 QuitWhenDone = false;
                 this.Text = this.Text += " (Setup/test mode)";
             }
-            // StartTimer();
         }
 
-        //const string TimeFormat = @"mm\:ss";
         const string DefaultStatusBar = Shared.Version + " - github.com/LumKitty";
         string _ConfigFile;
         Color TextBackgroundColor;
@@ -63,36 +71,32 @@ namespace StreamStartingTimer {
         }
 
         private void LoadConfig() {
+            Font font = lblCountdown.Font;
+            Shared.CurSettings.BGCol = Color.FromArgb(0, 255, 0);
+            Shared.CurSettings.FGCol = Color.FromArgb(0, 0, 0);
+            Shared.CurSettings.Alignment = ContentAlignment.TopLeft;
+            Shared.CurSettings.VNyanURL = "ws://localhost:8000/vnyan";
+            Shared.CurSettings.MixItUpURL = "http://localhost:8911/api/v2";
+            Shared.CurSettings.MixItUpPlatform = MIUPlatforms.Twitch;
+            Shared.CurSettings.TestTime = TimeSpan.FromMinutes(5);
             if (File.Exists(_ConfigFile)) {
                 dynamic Config = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(_ConfigFile));
-                if ((int)Config.X < SystemInformation.VirtualScreen.Width - 5 &&  // Safety in case monitor
+                try {
+                    if ((int)Config.X < SystemInformation.VirtualScreen.Width - 5 &&  // Safety in case monitor
                     (int)Config.Y < SystemInformation.VirtualScreen.Height - 5) { // size has changed
-                    Shared.CurSettings.Location = new Point((int)Config.X, (int)Config.Y);
-                    Shared.CurSettings.Dimensions = new Size((int)Config.Width, (int)Config.Height);
-                }
-                try {
-                    Shared.CurSettings.BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor);
-                } catch {
-                    Shared.CurSettings.BGCol = Color.Green;
-                }
-                try {
-                    Shared.CurSettings.FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor);
-                } catch {
-                    Shared.CurSettings.FGCol = Color.Black;
-                }
-                Shared.CurSettings.Alignment = (ContentAlignment)Config.Alignment;
-                Shared.CurSettings.Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle);
-                Shared.CurSettings.VNyanURL = Config.VNyanURL;
-                Shared.CurSettings.MixItUpURL = Config.MixItUpURL;
-                Shared.CurSettings.MixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch);
+                        Shared.CurSettings.Location = new Point((int)Config.X, (int)Config.Y);
+                        Shared.CurSettings.Dimensions = new Size((int)Config.Width, (int)Config.Height);
+                    }
+                } catch {}
+                try { Shared.CurSettings.BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor); } catch {}
+                try { Shared.CurSettings.FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor); } catch {}
+                try { Shared.CurSettings.Alignment = (ContentAlignment)Config.Alignment; } catch { }
+                try { Shared.CurSettings.Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle); } catch { }
+                try { Shared.CurSettings.VNyanURL = Config.VNyanURL; } catch { }
+                try { Shared.CurSettings.MixItUpURL = Config.MixItUpURL; } catch { }
+                try { Shared.CurSettings.MixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch); } catch { }
+                try { Shared.CurSettings.TestTime = TimeSpan.FromSeconds((int)Config.TestTime); } catch { }
             } else {
-                Font font = lblCountdown.Font;
-                Shared.CurSettings.BGCol = Color.FromArgb(0, 255, 0);
-                Shared.CurSettings.FGCol = Color.FromArgb(0, 0, 0);
-                Shared.CurSettings.Alignment = ContentAlignment.TopLeft;
-                Shared.CurSettings.VNyanURL = "ws://localhost:8000/vnyan";
-                Shared.CurSettings.MixItUpURL = "http://localhost:8911/api/v2";
-                Shared.CurSettings.MixItUpPlatform = MIUPlatforms.Twitch;
                 if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
                     Process myProcess = new Process();
                     myProcess.StartInfo.UseShellExecute = true;
@@ -118,7 +122,8 @@ namespace StreamStartingTimer {
                 new JProperty("Height", this.Size.Height),
                 new JProperty("VNyanURL", Shared.CurSettings.VNyanURL),
                 new JProperty("MixItUpURL", Shared.CurSettings.MixItUpURL),
-                new JProperty("MixItUpPlatform", Shared.CurSettings.MixItUpPlatform.ToString())
+                new JProperty("MixItUpPlatform", Shared.CurSettings.MixItUpPlatform.ToString()),
+                new JProperty("TestTime", Shared.CurSettings.TestTime.TotalSeconds)
             );
             File.WriteAllText(_ConfigFile, Config.ToString());
         }
@@ -181,9 +186,7 @@ namespace StreamStartingTimer {
         }
 
         private void Clock_Load(object sender, EventArgs e) {
-            TextBackgroundColor = Shared.CurSettings.BGCol;
             lblNextEvent.Text = DefaultStatusBar;
-            UpdateClock(txtSeconds.Text);
             this.Location = Shared.CurSettings.Location;
             this.Size = Shared.CurSettings.Dimensions;
         }
@@ -203,18 +206,16 @@ namespace StreamStartingTimer {
         }
 
         public void StartCountdown(int CountdownTime) {
+            lblCountdown.DataBindings.Remove(bndTestTime);
             SecondsToGo = CountdownTime;
             timer1.Enabled = true;
         }
 
-        private void UpdateClock(int SecondsToGo) {
-            lblCountdown.Text = TimeSpan.FromSeconds(SecondsToGo).ToString(Shared.TimeFormat);
+        private void UpdateClock(TimeSpan SecondsToGo) {
+            lblCountdown.Text = SecondsToGo.ToString(Shared.TimeFormat);
         }
-        private void UpdateClock(string SecondsToGo) {
-            int Seconds;
-            if (Int32.TryParse(SecondsToGo, out Seconds)) {
-                UpdateClock(Seconds);
-            }
+        private void UpdateClock(int SecondsToGo) {
+            UpdateClock (TimeSpan.FromSeconds(SecondsToGo));
         }
 
         private void timer1_Tick(object sender, EventArgs e) {
@@ -279,28 +280,23 @@ namespace StreamStartingTimer {
             }
         }
 
-        private void StartTimer() {
-            int Seconds;
-            if (Int32.TryParse(txtSeconds.Text, out Seconds)) {
-                StartCountdown(Seconds);
-                txtSeconds.Enabled = false;
-                btnStart.Enabled = false;
-                btnPause.Enabled = true;
-                btnReset.Enabled = true;
-                btnAdd30s.Enabled = true;
-                btnAdd60s.Enabled = true;
-                btnEvents.Enabled = false;
-                toolStripProgressBar1.Maximum = Seconds;
-                toolStripProgressBar1.Value = 0;
-                foreach (TimerEvent timerEvent in TimerEvents) {
-                    timerEvent.HasFired = false;
-                }
-            } else {
-                MessageBox.Show("Invalid time: " + txtSeconds.Text);
+        private void StartTimer(int Seconds) {
+            StartCountdown(Seconds);
+            UpdateClock(Seconds);
+            btnStart.Enabled = false;
+            btnPause.Enabled = true;
+            btnReset.Enabled = true;
+            btnAdd30s.Enabled = true;
+            btnAdd60s.Enabled = true;
+            btnEvents.Enabled = false;
+            toolStripProgressBar1.Maximum = Seconds;
+            toolStripProgressBar1.Value = 0;
+            foreach (TimerEvent timerEvent in TimerEvents) {
+                timerEvent.HasFired = false;
             }
         }
         private void btnStart_Click(object sender, EventArgs e) {
-            StartTimer();
+            StartTimer((int)Shared.CurSettings.TestTime.TotalSeconds);
         }
 
         private void btnPause_Click(object sender, EventArgs e) {
@@ -314,24 +310,10 @@ namespace StreamStartingTimer {
             btnReset.Enabled = false;
             btnStart.Enabled = true;
             btnEvents.Enabled = true;
-            txtSeconds.Enabled = true;
             timer1.Enabled = false;
-            UpdateClock(txtSeconds.Text);
+            //UpdateClock(Shared.CurSettings.TestTime);
             lblNextEvent.Text = DefaultStatusBar;
-        }
-
-        private void txtSeconds_KeyPress(object sender, KeyPressEventArgs e) {
-            if (
-                (e.KeyChar >= '0' && e.KeyChar <= '9') ||
-                (e.KeyChar < (char)32)) {
-                e.Handled = false;
-            } else {
-                e.Handled = true;
-            }
-        }
-
-        private void txtSeconds_TextChanged(object sender, EventArgs e) {
-            UpdateClock(txtSeconds.Text);
+            lblCountdown.DataBindings.Add(bndTestTime);
         }
 
         private void btnAdd30s_Click(object sender, EventArgs e) {
