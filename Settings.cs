@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,80 +51,159 @@ namespace StreamStartingTimer {
         [DisplayName("Default time")]
         [CategoryAttribute("Config"), DescriptionAttribute("When the app starts or the timer is reset, what do we reset to?")]
         public TimeSpan TestTime { get; set; }
+
+        private void Init() {
+            Font font = new Font("Arial", 72);
+            BGCol = Color.FromArgb(0, 255, 0);
+            FGCol = Color.FromArgb(0, 0, 0);
+            Alignment = ContentAlignment.TopLeft;
+            VNyanURL = "ws://localhost:8000/vnyan";
+            MixItUpURL = "http://localhost:8911/api/v2";
+            MixItUpPlatform = MIUPlatforms.Twitch;
+            TestTime = TimeSpan.FromMinutes(5);
+        }
+        
+        public Settings() {
+            Init();
+        }
+        public Settings(string ConfigFile) {
+            Init();
+            LoadConfig(ConfigFile);
+        }
+
+        public void LoadConfig(string ConfigFile) {
+            if (File.Exists(ConfigFile)) {
+                dynamic Config = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(ConfigFile));
+                try {
+                    if ((int)Config.X < SystemInformation.VirtualScreen.Width - 5 &&  // Safety in case monitor
+                    (int)Config.Y < SystemInformation.VirtualScreen.Height - 5) { // size has changed
+                        Location = new Point((int)Config.X, (int)Config.Y);
+                        Dimensions = new Size((int)Config.Width, (int)Config.Height);
+                    }
+                } catch { }
+                try { BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor); } catch { }
+                try { FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor); } catch { }
+                try { Alignment = (ContentAlignment)Config.Alignment; } catch { }
+                try { Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle); } catch { }
+                try { VNyanURL = Config.VNyanURL; } catch { }
+                try { MixItUpURL = Config.MixItUpURL; } catch { }
+                try { MixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch); } catch { }
+                try { TestTime = TimeSpan.FromSeconds((int)Config.TestTime); } catch { }
+            } 
+        }
+
+        public void SaveConfig(string ConfigFile, Point Location, Size Dimensions) {
+            JObject Config = new JObject(
+                new JProperty("FontName", Font.Name),
+                new JProperty("FontSize", Font.Size),
+                new JProperty("FontStyle", (int)Font.Style),
+                new JProperty("BackgroundColor", ColorTranslator.ToHtml(BGCol)),
+                new JProperty("ForegroundColor", ColorTranslator.ToHtml(FGCol)),
+                new JProperty("Alignment", Convert.ToInt32(Alignment)),
+                new JProperty("X", Location.X),
+                new JProperty("Y", Location.Y),
+                new JProperty("Width", Dimensions.Width),
+                new JProperty("Height", Dimensions.Height),
+                new JProperty("VNyanURL", VNyanURL),
+                new JProperty("MixItUpURL", MixItUpURL),
+                new JProperty("MixItUpPlatform", MixItUpPlatform.ToString()),
+                new JProperty("TestTime", TestTime.TotalSeconds)
+            );
+            File.WriteAllText(ConfigFile, Config.ToString());
+        }
+        public Settings Clone() {
+            Settings TempSettings = new Settings();
+            TempSettings.Font = this.Font;
+            TempSettings.BGCol = this.BGCol;
+            TempSettings.FGCol = this.FGCol;
+            TempSettings.Alignment = this.Alignment;
+            TempSettings.Location = this.Location;
+            TempSettings.Dimensions = this.Dimensions;
+            TempSettings.VNyanURL = this.VNyanURL;
+            TempSettings.MixItUpURL = this.MixItUpURL;
+            TempSettings.MixItUpPlatform = this.MixItUpPlatform;
+            TempSettings.TestTime = this.TestTime;
+            return TempSettings;
+        }
     }
 
     public class CSettings : Settings, INotifyPropertyChanged {
-        private static Settings Settings = new Settings();
+        private static Settings _Settings = new Settings();
+
+        public CSettings() { }
+        public CSettings(string ConfigFile) {
+            _Settings.LoadConfig(ConfigFile);
+        }
 
         public override string VNyanURL {
-            get { return Settings.VNyanURL; }
+            get { return _Settings.VNyanURL; }
             set {
-                if (Settings.VNyanURL == value) return;
-                Settings.VNyanURL = value;
+                if (_Settings.VNyanURL == value) return;
+                _Settings.VNyanURL = value;
                 RaisePropertyChanged("VNyanURL");
             }
         }
         public override string MixItUpURL {
-            get { return Settings.MixItUpURL; }
+            get { return _Settings.MixItUpURL; }
             set {
-                if (Settings.MixItUpURL == value) return;
-                Settings.MixItUpURL = value;
+                if (_Settings.MixItUpURL == value) return;
+                _Settings.MixItUpURL = value;
                 RaisePropertyChanged("MixItUpURL");
             }
         }
         public override Font Font {
-            get { return Settings.Font; }
+            get { return _Settings.Font; }
             set {
-                if (Settings.Font == value) return;
-                Settings.Font = value;
+                if (_Settings.Font == value) return;
+                _Settings.Font = value;
                 RaisePropertyChanged("Font");
             }
         }
         public override Color FGCol {
-            get { return Settings.FGCol; }
+            get { return _Settings.FGCol; }
             set {
-                if (Settings.FGCol == value) return;
-                Settings.FGCol = value;
+                if (_Settings.FGCol == value) return;
+                _Settings.FGCol = value;
                 RaisePropertyChanged("FGCol");
             }
         }
         public override Color BGCol {
-            get { return Settings.BGCol; }
+            get { return _Settings.BGCol; }
             set {
-                if (Settings.BGCol == value) return;
-                Settings.BGCol = value;
+                if (_Settings.BGCol == value) return;
+                _Settings.BGCol = value;
                 RaisePropertyChanged("BGCol");
             }
         }
         public override ContentAlignment Alignment {
-            get { return Settings.Alignment; }
+            get { return _Settings.Alignment; }
             set {
-                if (Settings.Alignment == value) return;
-                Settings.Alignment = value;
+                if (_Settings.Alignment == value) return;
+                _Settings.Alignment = value;
                 RaisePropertyChanged("Alignment");
             }
         }
         public override Point Location {
-            get { return Settings.Location; }
+            get { return _Settings.Location; }
             set {
-                if (Settings.Location == value) return;
-                Settings.Location = value;
+                if (_Settings.Location == value) return;
+                _Settings.Location = value;
                 RaisePropertyChanged("Location");
             }
         }
         public override Size Dimensions {
-            get { return Settings.Dimensions; }
+            get { return _Settings.Dimensions; }
             set {
-                if (Settings.Dimensions == value) return;
-                Settings.Dimensions = value;
+                if (_Settings.Dimensions == value) return;
+                _Settings.Dimensions = value;
                 RaisePropertyChanged("Dimensions");
             }
         }
         public override MIUPlatforms MixItUpPlatform {
-            get { return Settings.MixItUpPlatform; }
+            get { return _Settings.MixItUpPlatform; }
             set {
-                if (Settings.MixItUpPlatform == value) return;
-                Settings.MixItUpPlatform = value;
+                if (_Settings.MixItUpPlatform == value) return;
+                _Settings.MixItUpPlatform = value;
                 RaisePropertyChanged("MixItUpPlatform");
             }
         }

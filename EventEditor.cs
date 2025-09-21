@@ -78,26 +78,9 @@ namespace StreamStartingTimer {
             //listView1.Items[SelectedTimerEvent].SubItems[2].Text = TimerEvents[SelectedTimerEvent].Columns[2];
         }
 
-        private void btnLoad_MouseClick(object sender, MouseEventArgs e) {
-            if (openFileDialog1.ShowDialog() == DialogResult.OK) {
-                FormTimerEvents = Shared.LoadEvents(openFileDialog1.FileName);
-                UpdateListView();
-                ChangesMade = false;
-            }
-            listView1.Focus();
-        }
-
-        private void btnSave_MouseClick(object sender, MouseEventArgs e) {
-            if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
-                Shared.SaveEvents(saveFileDialog1.FileName, FormTimerEvents);
-                ChangesMade = false;
-            }
-            listView1.Focus();
-        }
-
         private void CloseForm(DialogResult result) {
             if (ChangesMade) {
-                if (MessageBox.Show("You have not saved your events.\r\n" +
+                if (MessageBox.Show( "You have not saved your events.\r\n" +
                                      "They will work for this session only\r\n" +
                                      "\r\n" +
                                      "Close editor without saving?",
@@ -110,10 +93,6 @@ namespace StreamStartingTimer {
                 this.DialogResult = result;
                 this.Close();
             }
-        }
-
-        private void btnOK_MouseClick(object sender, MouseEventArgs e) {
-            CloseForm(DialogResult.OK);
         }
 
         private void btnCancel_Click(object sender, EventArgs e) {
@@ -182,6 +161,27 @@ namespace StreamStartingTimer {
 
         private void EventEditor_Shown(object sender, EventArgs e) {
             UpdateListView();
+        }
+
+        private void btnLoad_Click(object sender, EventArgs e) {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK) {
+                FormTimerEvents = Shared.LoadEvents(openFileDialog1.FileName);
+                UpdateListView();
+                ChangesMade = false;
+            }
+            listView1.Focus();
+        }
+
+        private void btnSave_Click(object sender, EventArgs e) {
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
+                Shared.SaveEvents(saveFileDialog1.FileName, FormTimerEvents);
+                ChangesMade = false;
+            }
+            listView1.Focus();
+        }
+
+        private void btnOK_Click(object sender, EventArgs e) {
+            CloseForm(DialogResult.OK);
         }
     }
 }

@@ -45,6 +45,7 @@
             lblNextEvent = new ToolStripStatusLabel();
             lblCountdown = new Label();
             timer1 = new System.Windows.Forms.Timer(components);
+            toolStripSeparator1 = new ToolStripSeparator();
             toolStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -52,7 +53,7 @@
             // toolStrip1
             // 
             toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
-            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, toolStripSeparator3, btnEvents, btnConfig });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, toolStripSeparator3, btnEvents, toolStripSeparator1, btnConfig });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(794, 27);
@@ -128,6 +129,7 @@
             // 
             // btnEvents
             // 
+            btnEvents.BackColor = SystemColors.Control;
             btnEvents.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnEvents.Image = (Image)resources.GetObject("btnEvents.Image");
             btnEvents.ImageTransparentColor = Color.Magenta;
@@ -196,6 +198,11 @@
             timer1.Interval = 1000;
             timer1.Tick += timer1_Tick;
             // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(6, 27);
+            // 
             // Clock
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -207,7 +214,6 @@
             MaximizeBox = false;
             Name = "Clock";
             Text = "Stream Startup Timer";
-            FormClosed += Clock_FormClosed;
             Load += Clock_Load;
             Shown += Clock_Shown;
             toolStrip1.ResumeLayout(false);
@@ -239,5 +245,6 @@
         private ToolStripStatusLabel lblVNyan;
         private ToolStripStatusLabel lblMixItUp;
         private ToolStripButton btnConfig;
+        private ToolStripSeparator toolStripSeparator1;
     }
 }

@@ -98,7 +98,7 @@
             btnLoad.TabIndex = 6;
             btnLoad.Text = "&Load";
             btnLoad.UseVisualStyleBackColor = true;
-            btnLoad.MouseClick += btnLoad_MouseClick;
+            btnLoad.Click += btnLoad_Click;
             // 
             // btnSave
             // 
@@ -109,7 +109,7 @@
             btnSave.TabIndex = 7;
             btnSave.Text = "&Save";
             btnSave.UseVisualStyleBackColor = true;
-            btnSave.MouseClick += btnSave_MouseClick;
+            btnSave.Click += btnSave_Click;
             // 
             // btnCancel
             // 
@@ -131,18 +131,21 @@
             btnOK.TabIndex = 8;
             btnOK.Text = "OK";
             btnOK.UseVisualStyleBackColor = true;
-            btnOK.MouseClick += btnOK_MouseClick;
+            btnOK.Click += btnOK_Click;
             // 
             // openFileDialog1
             // 
+            openFileDialog1.AutoUpgradeEnabled = false;
             openFileDialog1.DefaultExt = "json";
-            openFileDialog1.FileName = "openFileDialog1";
+            openFileDialog1.FileName = "DefaultEvents.json";
             openFileDialog1.Filter = "JSON files|*.json";
             openFileDialog1.Title = "Load Event List";
             // 
             // saveFileDialog1
             // 
+            saveFileDialog1.AutoUpgradeEnabled = false;
             saveFileDialog1.DefaultExt = "json";
+            saveFileDialog1.FileName = "DefaultEvents.json";
             saveFileDialog1.Filter = "JSON files|*.json";
             saveFileDialog1.Title = "Save Event List";
             // 
