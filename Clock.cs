@@ -12,8 +12,15 @@ using WatsonWebsocket;
 namespace StreamStartingTimer {
     public partial class Clock : Form {
         private int SecondsToGo;
-        public Clock(int StartTime=0, string EventsFile = "::", string ConfigFile = "::") {
+        public Clock(int StartTime = 0, string EventsFile = "::", string ConfigFile = "::") {
             InitializeComponent();
+            lblCountdown.DataBindings.Add("BackColor", Shared.CurSettings, "BGCol");
+            lblCountdown.DataBindings.Add("ForeColor", Shared.CurSettings, "FGCol");
+            lblCountdown.DataBindings.Add("Font", Shared.CurSettings, "Font");
+            lblCountdown.DataBindings.Add("TextAlign", Shared.CurSettings, "Alignment");
+            //this.DataBindings.Add("Location", Shared.CurSettings, "Location");
+            //this.DataBindings.Add("Size", Shared.CurSettings, "Dimensions");
+
             if (ConfigFile != "::") {
                 _ConfigFile = ConfigFile;
             } else {
@@ -46,25 +53,6 @@ namespace StreamStartingTimer {
         private List<TimerEvent> TimerEvents = new();
         private bool QuitWhenDone = false;
 
-        private void SaveConfig() {
-            JObject Config = new JObject(
-                new JProperty("FontName", fontDialog.Font.Name),
-                new JProperty("FontSize", fontDialog.Font.Size),
-                new JProperty("FontStyle", (int)fontDialog.Font.Style),
-                new JProperty("BackgroundColor", txtBackColor.Text),
-                new JProperty("ForegroundColor", txtForeColor.Text),
-                new JProperty("Alignment", cmbAlign.SelectedIndex),
-                new JProperty("X", this.Location.X),
-                new JProperty("Y", this.Location.Y),
-                new JProperty("Width", this.Width),
-                new JProperty("Height", this.Height),
-                new JProperty("VNyanURL", Shared.VNyanURL),
-                new JProperty("MixItUpURL", Shared.MixItUpURL),
-                new JProperty("MixItUpPlatform", Shared.DefaultMixItUpPlatform.ToString())
-            );
-            File.WriteAllText(_ConfigFile, Config.ToString());
-        }
-
         void VNyanConnected(object sender, EventArgs args) {
             lblVNyan.BackColor = Color.Green;
             Shared.VNyanConnected = true;
@@ -79,31 +67,32 @@ namespace StreamStartingTimer {
                 dynamic Config = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(_ConfigFile));
                 if ((int)Config.X < SystemInformation.VirtualScreen.Width - 5 &&  // Safety in case monitor
                     (int)Config.Y < SystemInformation.VirtualScreen.Height - 5) { // size has changed
-                    this.Location = new Point((int)Config.X, (int)Config.Y);
-                    this.Size = new Size((int)Config.Width, (int)Config.Height);
+                    Shared.CurSettings.Location = new Point((int)Config.X, (int)Config.Y);
+                    Shared.CurSettings.Dimensions = new Size((int)Config.Width, (int)Config.Height);
                 }
-                txtBackColor.Text = Config.BackgroundColor;
-                txtForeColor.Text = Config.ForegroundColor;
-                lblCountdown.BackColor = ValidateTextColor((string)Config.BackgroundColor);
-                lblCountdown.ForeColor = ValidateTextColor((string)Config.ForegroundColor);
-                cmbAlign.SelectedIndex = (int)Config.Alignment;
-                SetTextAlignment((int)Config.Alignment);
-                Font font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle);
-                fontDialog.Font = font;
-                lblCountdown.Font = font;
-                Shared.VNyanURL = Config.VNyanURL;
-                Shared.MixItUpURL = Config.MixItUpURL;
-                Shared.DefaultMixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch);
+                try {
+                    Shared.CurSettings.BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor);
+                } catch {
+                    Shared.CurSettings.BGCol = Color.Green;
+                }
+                try {
+                    Shared.CurSettings.FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor);
+                } catch {
+                    Shared.CurSettings.FGCol = Color.Black;
+                }
+                Shared.CurSettings.Alignment = (ContentAlignment)Config.Alignment;
+                Shared.CurSettings.Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle);
+                Shared.CurSettings.VNyanURL = Config.VNyanURL;
+                Shared.CurSettings.MixItUpURL = Config.MixItUpURL;
+                Shared.CurSettings.MixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch);
             } else {
                 Font font = lblCountdown.Font;
-                fontDialog.Font = font;
-                txtBackColor.Text = "00FF00";
-                txtForeColor.Text = "000000";
-                cmbAlign.SelectedIndex = 0;
-                SetTextAlignment(0);
-                Shared.VNyanURL = "ws://localhost:8000/vnyan";
-                Shared.MixItUpURL = "http://localhost:8911/api/v2";
-                Shared.DefaultMixItUpPlatform = MIUPlatforms.Twitch;
+                Shared.CurSettings.BGCol = Color.FromArgb(0, 255, 0);
+                Shared.CurSettings.FGCol = Color.FromArgb(0, 0, 0);
+                Shared.CurSettings.Alignment = ContentAlignment.TopLeft;
+                Shared.CurSettings.VNyanURL = "ws://localhost:8000/vnyan";
+                Shared.CurSettings.MixItUpURL = "http://localhost:8911/api/v2";
+                Shared.CurSettings.MixItUpPlatform = MIUPlatforms.Twitch;
                 if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
                     Process myProcess = new Process();
                     myProcess.StartInfo.UseShellExecute = true;
@@ -112,14 +101,35 @@ namespace StreamStartingTimer {
                     myProcess.Dispose();
                 }
             }
+            //txtBackColor.Text = ColorTranslator.To
+            //txtForeColor.Text = Config.ForegroundColor;
         }
+        private void SaveConfig() {
+            JObject Config = new JObject(
+                new JProperty("FontName", Shared.CurSettings.Font.Name),
+                new JProperty("FontSize", Shared.CurSettings.Font.Size),
+                new JProperty("FontStyle", (int)Shared.CurSettings.Font.Style),
+                new JProperty("BackgroundColor", ColorTranslator.ToHtml(Shared.CurSettings.BGCol)),
+                new JProperty("ForegroundColor", ColorTranslator.ToHtml(Shared.CurSettings.FGCol)),
+                new JProperty("Alignment", Convert.ToInt32(Shared.CurSettings.Alignment)),
+                new JProperty("X", this.Location.X),
+                new JProperty("Y", this.Location.Y),
+                new JProperty("Width", this.Size.Width),
+                new JProperty("Height", this.Size.Height),
+                new JProperty("VNyanURL", Shared.CurSettings.VNyanURL),
+                new JProperty("MixItUpURL", Shared.CurSettings.MixItUpURL),
+                new JProperty("MixItUpPlatform", Shared.CurSettings.MixItUpPlatform.ToString())
+            );
+            File.WriteAllText(_ConfigFile, Config.ToString());
+        }
+
 
         private async Task ConnectVNyan() {
             int n = 0;
             lblVNyan.Enabled = true;
             lblVNyan.BackColor = Color.Goldenrod;
             do {
-                Shared.wsClient = new WatsonWsClient(new Uri(Shared.VNyanURL));
+                Shared.wsClient = new WatsonWsClient(new Uri(Shared.CurSettings.VNyanURL));
                 Shared.wsClient.KeepAliveInterval = 1000;
                 Shared.wsClient.ServerConnected += VNyanConnected;
                 Shared.wsClient.ServerDisconnected += VNyanDisconnected;
@@ -131,13 +141,13 @@ namespace StreamStartingTimer {
                 if (!Shared.VNyanConnected) {
                     lblVNyan.BackColor = Color.Red;
                 }
-            } while(!Shared.VNyanConnected);
+            } while (!Shared.VNyanConnected);
         }
         private async Task ConnectMixItUp() {
             lblMixItUp.Enabled = true;
             lblMixItUp.BackColor = Color.Goldenrod;
             do {
-                if (Shared.InitMIU(Shared.MixItUpURL)) {
+                if (Shared.InitMIU(Shared.CurSettings.MixItUpURL)) {
                     lblMixItUp.BackColor = Color.Green;
                     Shared.MixItUpConnected = true;
                     //UpdateMiuTimerEvents(ref TimerEvents);
@@ -155,14 +165,14 @@ namespace StreamStartingTimer {
         }*/
 
         private void Connect() {
-            if (Shared.VNyanURL.Length > 0) {
+            if (Shared.CurSettings.VNyanURL.Length > 0) {
                 Task.Run(() => ConnectVNyan());
             } else {
                 lblVNyan.BackColor = SystemColors.Control;
                 lblVNyan.Enabled = false;
                 Shared.VNyanConnected = false;
             }
-            if (Shared.MixItUpURL.Length > 0) {
+            if (Shared.CurSettings.MixItUpURL.Length > 0) {
                 Task.Run(() => ConnectMixItUp());
             } else {
                 lblMixItUp.BackColor = SystemColors.Control;
@@ -171,9 +181,11 @@ namespace StreamStartingTimer {
         }
 
         private void Clock_Load(object sender, EventArgs e) {
-            TextBackgroundColor = txtBackColor.BackColor;
+            TextBackgroundColor = Shared.CurSettings.BGCol;
             lblNextEvent.Text = DefaultStatusBar;
             UpdateClock(txtSeconds.Text);
+            this.Location = Shared.CurSettings.Location;
+            this.Size = Shared.CurSettings.Dimensions;
         }
 
         private static Color ValidateTextColor(string strColor) {
@@ -189,45 +201,6 @@ namespace StreamStartingTimer {
             }
             throw new Exception("InvalidColor");
         }
-
-        private void txtBackColor_TextChanged(object sender, EventArgs e) {
-            try {
-                lblCountdown.BackColor = ValidateTextColor(txtBackColor.Text);
-                txtBackColor.BackColor = TextBackgroundColor;
-            } catch {
-                txtBackColor.BackColor = Color.FromArgb(255, 127, 127);
-            }
-        }
-
-        private void txtForeColor_TextChanged(object sender, EventArgs e) {
-            try {
-                lblCountdown.ForeColor = ValidateTextColor(txtForeColor.Text);
-                txtForeColor.BackColor = TextBackgroundColor;
-            } catch {
-                txtForeColor.BackColor = Color.FromArgb(255, 127, 127);
-            }
-        }
-
-        private void txtColor_KeyPress(object sender, KeyPressEventArgs e) {
-            if (
-                 (e.KeyChar >= 'A' && e.KeyChar <= 'F') ||
-                 (e.KeyChar >= '0' && e.KeyChar <= '9') ||
-                 (e.KeyChar < (char)32)) {
-                e.Handled = false;
-            } else if (e.KeyChar >= 'a' && e.KeyChar <= 'f') {
-                e.KeyChar = (char)((int)e.KeyChar - 32);
-            } else {
-                e.Handled = true;
-            }
-        }
-
-        private void btnFont_Click(object sender, EventArgs e) {
-            this.fontDialog.Font = lblCountdown.Font;
-            if (this.fontDialog.ShowDialog() == DialogResult.OK) {
-                lblCountdown.Font = this.fontDialog.Font;
-            }
-        }
-
 
         public void StartCountdown(int CountdownTime) {
             SecondsToGo = CountdownTime;
@@ -249,6 +222,7 @@ namespace StreamStartingTimer {
             int n;
             int i;
             int ExtraSimultaneousEvents = 0;
+            
             SecondsToGo--;
             UpdateClock(SecondsToGo);
 
@@ -258,34 +232,34 @@ namespace StreamStartingTimer {
             } else {
                 toolStripProgressBar1.Value = n;
             }
-                for (n = 0; n < TimerEvents.Count; n++) {
-                    if (TimerEvents[n].Enabled) {
-                        if ((TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !TimerEvents[n].HasFired) {
-                            StatusLabel = "Next Event in " + (SecondsToGo - TimerEvents[n].Time.TotalSeconds) + "s: " + TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + TimerEvents[n].EventType + ") " + TimerEvents[n].Payload;
-                            i = n + 1;
-                            while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == TimerEvents[n].Time.TotalSeconds) {
-                                if (!TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
-                                i++;
-                            }
-                            if (ExtraSimultaneousEvents > 0) {
-                                StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
-                            }
-                            break;
-                        } else if ((TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !TimerEvents[n].HasFired) {
-                            i = n;
-                            StatusLabel = "Firing event:";
-                            while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
-                                if (!TimerEvents[i].HasFired) {
-                                    StatusLabel += " (" + TimerEvents[i].EventType + ") " + TimerEvents[i].Payload;
-                                    if (!TimerEvents[i].Refire) { TimerEvents[i].HasFired = true; }
-                                    TimerEvents[i].Fire();
-                                }
-                                i++;
-                            }
-                            break;
+            for (n = 0; n < TimerEvents.Count; n++) {
+                if (TimerEvents[n].Enabled) {
+                    if ((TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !TimerEvents[n].HasFired) {
+                        StatusLabel = "Next Event in " + (SecondsToGo - TimerEvents[n].Time.TotalSeconds) + "s: " + TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + TimerEvents[n].EventType + ") " + TimerEvents[n].Payload;
+                        i = n + 1;
+                        while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == TimerEvents[n].Time.TotalSeconds) {
+                            if (!TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
+                            i++;
                         }
+                        if (ExtraSimultaneousEvents > 0) {
+                            StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
+                        }
+                        break;
+                    } else if ((TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !TimerEvents[n].HasFired) {
+                        i = n;
+                        StatusLabel = "Firing event:";
+                        while (i < TimerEvents.Count && TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
+                            if (!TimerEvents[i].HasFired) {
+                                StatusLabel += " (" + TimerEvents[i].EventType + ") " + TimerEvents[i].Payload;
+                                if (!TimerEvents[i].Refire) { TimerEvents[i].HasFired = true; }
+                                TimerEvents[i].Fire();
+                            }
+                            i++;
+                        }
+                        break;
                     }
                 }
+            }
             lblNextEvent.Text = StatusLabel;
             if (SecondsToGo <= 0) {
                 timer1.Stop();
@@ -373,27 +347,16 @@ namespace StreamStartingTimer {
             //Shared.wsClient.Stop();
         }
 
-        private void SetTextAlignment(int Position) {
-            switch (Position) {
-                case 0: lblCountdown.TextAlign = ContentAlignment.TopLeft; break;
-                case 1: lblCountdown.TextAlign = ContentAlignment.TopCenter; break;
-                case 2: lblCountdown.TextAlign = ContentAlignment.TopRight; break;
-                case 3: lblCountdown.TextAlign = ContentAlignment.MiddleLeft; break;
-                case 4: lblCountdown.TextAlign = ContentAlignment.MiddleCenter; break;
-                case 5: lblCountdown.TextAlign = ContentAlignment.MiddleRight; break;
-                case 6: lblCountdown.TextAlign = ContentAlignment.BottomLeft; break;
-                case 7: lblCountdown.TextAlign = ContentAlignment.BottomCenter; break;
-                case 8: lblCountdown.TextAlign = ContentAlignment.BottomRight; break;
-            }
-        }
-
-
-        private void cmbAlign_DropDownClosed(object sender, EventArgs e) {
-            SetTextAlignment(cmbAlign.SelectedIndex);
-        }
-
         private void Clock_Shown(object sender, EventArgs e) {
             Connect();
+        }
+
+        private void btnConfig_Click(object sender, EventArgs e) {
+            Config frmConfig = new Config();
+            frmConfig.ShowDialog();
+            //if (EventEditor.DialogResult == DialogResult.OK) {
+            //    TimerEvents = new List<TimerEvent>(EventEditor.FormTimerEvents);
+            //}
         }
     }
 }

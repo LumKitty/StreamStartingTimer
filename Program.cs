@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
+using System.Drawing.Text;
 using System.Net;
 using System.Net.WebSockets;
 using System.Security.Permissions;
@@ -144,7 +145,7 @@ namespace StreamStartingTimer
                 jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                 string Response = "";
                 int httpStatus = 0;
-                var PostResult = await Shared.client.PostAsync(Shared.MixItUpURL + "/commands/" + MiuCmdID, jsonData);
+                var PostResult = await Shared.client.PostAsync(Shared.CurSettings.MixItUpURL + "/commands/" + MiuCmdID, jsonData);
                 Response = PostResult.Content.ReadAsStringAsync().Result;
                 httpStatus = ((int)PostResult.StatusCode);
                 Console.WriteLine(PostResult.ToString());
@@ -164,7 +165,7 @@ namespace StreamStartingTimer
         }
         
         public override void TestFire() {
-            if (GetMiuCmdId() == "") { Shared.InitMIU(Shared.MixItUpURL); }
+            if (GetMiuCmdId() == "") { Shared.InitMIU(Shared.CurSettings.MixItUpURL); }
             Task.Run(() => _Fire());
         }
 
@@ -192,7 +193,7 @@ namespace StreamStartingTimer
             Time = TimeSpan.FromSeconds(0);
             Payload = "";
             Arguments = "";
-            Platform = Shared.DefaultMixItUpPlatform;
+            Platform = Shared.CurSettings.MixItUpPlatform;
         }
         public MIUEvent(dynamic JSON) {
             SetEnabled(JSON);
@@ -201,8 +202,8 @@ namespace StreamStartingTimer
             SetPayload(JSON);
             try { Arguments = JSON.Arguments.ToString(); } catch { Arguments = ""; }
             try {
-                Shared.GetMiuPlatform(JSON.Platform.ToString(), Shared.DefaultMixItUpPlatform);
-            } catch { Platform = Shared.DefaultMixItUpPlatform; }
+                Shared.GetMiuPlatform(JSON.Platform.ToString(), Shared.CurSettings.MixItUpPlatform);
+            } catch { Platform = Shared.CurSettings.MixItUpPlatform; }
             
         }
         public override JObject JSON {
@@ -283,16 +284,16 @@ namespace StreamStartingTimer
             string tempWindowStyle;
             try { tempWindowStyle = JSON.WindowStyle.ToString(); } catch { tempWindowStyle = "Normal"; }
             switch (tempWindowStyle) {
-                case "Normal"   : WindowStyle = ProcessWindowStyle.Normal;    break;
+                case "Normal": WindowStyle = ProcessWindowStyle.Normal; break;
                 case "Minimized": WindowStyle = ProcessWindowStyle.Minimized; break;
                 case "Maximized": WindowStyle = ProcessWindowStyle.Maximized; break;
-                case "Hidden"   : WindowStyle = ProcessWindowStyle.Hidden;    break;
+                case "Hidden": WindowStyle = ProcessWindowStyle.Hidden; break;
             }
             bool tempShellExecute = false;
             try { bool.TryParse(JSON.ShellExecute.ToString(), out tempShellExecute); } catch { }
             ShellExecute = tempShellExecute;
         }
-            public override JObject JSON {
+        public override JObject JSON {
             get {
                 return new JObject(
                     new JProperty("EventType", EventType.ToString()),
@@ -309,15 +310,112 @@ namespace StreamStartingTimer
         }
     }
 
- 
+    public class Settings {
+        public virtual string VNyanURL { get; set; }
+        public virtual string MixItUpURL { get; set; }
+        public virtual Font Font { get; set; }
+        public virtual Color FGCol { get; set; }
+        public virtual Color BGCol { get; set; }
+        public virtual ContentAlignment Alignment { get; set; }
+        public virtual Point Location { get; set; }
+        public virtual Size Dimensions { get; set; }
+        public virtual MIUPlatforms MixItUpPlatform { get; set; }
+        public TimeSpan TestTime { get; set; }
+    }
+
+    public class CSettings : Settings, INotifyPropertyChanged {
+        private static Settings Settings = new Settings();
+
+        public string VNyanURL {
+            get { return Settings.VNyanURL; }
+            set {
+                if (Settings.VNyanURL == value) return;
+                Settings.VNyanURL = value;
+                RaisePropertyChanged("VNyanURL");
+            }
+        }
+        public string MixItUpURL {
+            get { return Settings.MixItUpURL; }
+            set {
+                if (Settings.MixItUpURL == value) return;
+                Settings.MixItUpURL = value;
+                RaisePropertyChanged("MixItUpURL");
+            }
+        }
+        public Font Font {
+            get { return Settings.Font; }
+            set {
+                if (Settings.Font == value) return;
+                Settings.Font = value;
+                RaisePropertyChanged("Font");
+            }
+        }
+        public Color FGCol {
+            get { return Settings.FGCol; }
+            set {
+                if (Settings.FGCol == value) return;
+                Settings.FGCol = value;
+                RaisePropertyChanged("FGCol");
+            }
+        }
+        public Color BGCol {
+            get { return Settings.BGCol; }
+            set {
+                if (Settings.BGCol == value) return;
+                Settings.BGCol = value;
+                RaisePropertyChanged("BGCol");
+            }
+        }
+        public ContentAlignment Alignment {
+            get { return Settings.Alignment; }
+            set {
+                if (Settings.Alignment == value) return;
+                Settings.Alignment = value;
+                RaisePropertyChanged("Alignment");
+            }
+        }
+        public Point Location {
+            get { return Settings.Location; }
+            set {
+                if (Settings.Location == value) return;
+                Settings.Location = value;
+                RaisePropertyChanged("Location");
+            }
+        }
+        public Size Dimensions {
+            get { return Settings.Dimensions; }
+            set {
+                if (Settings.Dimensions == value) return;
+                Settings.Dimensions = value;
+                RaisePropertyChanged("Dimensions");
+            }
+        }
+        public MIUPlatforms MixItUpPlatform {
+            get { return Settings.MixItUpPlatform; }
+            set {
+                if (Settings.MixItUpPlatform == value) return;
+                Settings.MixItUpPlatform = value;
+                RaisePropertyChanged("MixItUpPlatform");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void RaisePropertyChanged(string propertyName) {
+            var handler = PropertyChanged;
+            if (handler != null) {
+                handler(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        
+    }
+
     public static class Shared {
+        public static CSettings CurSettings = new CSettings();
         public const string Version = "v0.2";
         public const string TimeFormat = @"mm\:ss";
         public static bool VNyanConnected = false;
         public static bool MixItUpConnected = false;
-        public static string VNyanURL;
-        public static string MixItUpURL;
-        public static MIUPlatforms DefaultMixItUpPlatform;
+        
         public static WatsonWsClient wsClient;
         public static CancellationToken CT = new System.Threading.CancellationToken();
         public static HttpClient client = new HttpClient();
@@ -325,13 +423,13 @@ namespace StreamStartingTimer
 
         public static bool InitMIU(string URL) {
             miuCommands.Clear();
-            MixItUpURL = URL;
+            CurSettings.MixItUpURL = URL;
             var GetResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
             int skip = 0;
             int count = 0;
             do {
                 try {
-                    GetResult = client.GetAsync(MixItUpURL + "/commands?pagesize=10&skip=" + skip.ToString()).GetAwaiter().GetResult();
+                    GetResult = client.GetAsync(CurSettings.MixItUpURL + "/commands?pagesize=10&skip=" + skip.ToString()).GetAwaiter().GetResult();
                 } catch (Exception e) {
                     return false;
                 }
@@ -461,20 +559,23 @@ namespace StreamStartingTimer
                         if (dateTime.Minute < o.Past) {
                             trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, (int)o.Past, 0, 0);
                         } else {
-                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour+1, (int)o.Past, 0, 0);
+                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour + 1, (int)o.Past, 0, 0);
                         }
                         StartTime = (int)(trgTime - DateTime.Now).TotalSeconds;
                     }
-                    if (o.Seconds != null ) {
+                    if (o.Seconds != null) {
                         StartTime += (int)o.Seconds;
                     }
-                    if (o.Minutes!= null ) {
-                        StartTime += (int)o.Minutes*60;
+                    if (o.Minutes != null) {
+                        StartTime += (int)o.Minutes * 60;
                     }
                 }
             );
+            Clock frmClock = new Clock(StartTime, EventsFile, ConfigFile);
+            Application.Run(frmClock);
+
             
-            Application.Run(new Clock(StartTime, EventsFile, ConfigFile));
+
         }
     }
 

@@ -37,23 +37,14 @@
             btnAdd60s = new ToolStripButton();
             txtSeconds = new ToolStripTextBox();
             toolStripSeparator3 = new ToolStripSeparator();
-            toolStripLabel1 = new ToolStripLabel();
-            txtBackColor = new ToolStripTextBox();
-            toolStripSeparator1 = new ToolStripSeparator();
-            btnFont = new ToolStripButton();
-            txtForeColor = new ToolStripTextBox();
-            toolStripSeparator4 = new ToolStripSeparator();
-            toolStripLabel2 = new ToolStripLabel();
-            cmbAlign = new ToolStripComboBox();
-            toolStripSeparator2 = new ToolStripSeparator();
             btnEvents = new ToolStripButton();
+            btnConfig = new ToolStripButton();
             statusStrip1 = new StatusStrip();
             lblVNyan = new ToolStripStatusLabel();
             lblMixItUp = new ToolStripStatusLabel();
             toolStripProgressBar1 = new ToolStripProgressBar();
             lblNextEvent = new ToolStripStatusLabel();
             lblCountdown = new Label();
-            fontDialog = new FontDialog();
             timer1 = new System.Windows.Forms.Timer(components);
             toolStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
@@ -62,7 +53,7 @@
             // toolStrip1
             // 
             toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
-            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, txtSeconds, toolStripSeparator3, toolStripLabel1, txtBackColor, toolStripSeparator1, btnFont, txtForeColor, toolStripSeparator4, toolStripLabel2, cmbAlign, toolStripSeparator2, btnEvents });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { btnStart, btnPause, btnReset, btnAdd30s, btnAdd60s, txtSeconds, toolStripSeparator3, btnEvents, btnConfig });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(794, 27);
@@ -146,75 +137,6 @@
             toolStripSeparator3.Name = "toolStripSeparator3";
             toolStripSeparator3.Size = new Size(6, 27);
             // 
-            // toolStripLabel1
-            // 
-            toolStripLabel1.Name = "toolStripLabel1";
-            toolStripLabel1.Size = new Size(71, 24);
-            toolStripLabel1.Text = "Background";
-            // 
-            // txtBackColor
-            // 
-            txtBackColor.MaxLength = 6;
-            txtBackColor.Name = "txtBackColor";
-            txtBackColor.Size = new Size(43, 27);
-            txtBackColor.Text = "00FF00";
-            txtBackColor.ToolTipText = "Background colour of timer (Use a Chroma Key filter in OBS set to the same colour)";
-            txtBackColor.KeyPress += txtColor_KeyPress;
-            txtBackColor.TextChanged += txtBackColor_TextChanged;
-            // 
-            // toolStripSeparator1
-            // 
-            toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(6, 27);
-            // 
-            // btnFont
-            // 
-            btnFont.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnFont.Image = (Image)resources.GetObject("btnFont.Image");
-            btnFont.ImageTransparentColor = Color.Magenta;
-            btnFont.Name = "btnFont";
-            btnFont.Size = new Size(68, 24);
-            btnFont.Text = "Clock Font";
-            btnFont.ToolTipText = "Change the clock font & size";
-            btnFont.Click += btnFont_Click;
-            // 
-            // txtForeColor
-            // 
-            txtForeColor.MaxLength = 6;
-            txtForeColor.Name = "txtForeColor";
-            txtForeColor.Size = new Size(43, 27);
-            txtForeColor.Text = "000000";
-            txtForeColor.ToolTipText = "Clock colour";
-            txtForeColor.KeyPress += txtColor_KeyPress;
-            txtForeColor.TextChanged += txtForeColor_TextChanged;
-            // 
-            // toolStripSeparator4
-            // 
-            toolStripSeparator4.Name = "toolStripSeparator4";
-            toolStripSeparator4.Size = new Size(6, 27);
-            // 
-            // toolStripLabel2
-            // 
-            toolStripLabel2.Name = "toolStripLabel2";
-            toolStripLabel2.Size = new Size(35, 24);
-            toolStripLabel2.Text = "Align";
-            // 
-            // cmbAlign
-            // 
-            cmbAlign.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbAlign.IntegralHeight = false;
-            cmbAlign.Items.AddRange(new object[] { "Top Left", "Top Centre", "Top Right", "Left", "Centre", "Right", "Bottom Left", "Bottom Centre", "Bottom Right" });
-            cmbAlign.Margin = new Padding(1, -1, 1, 0);
-            cmbAlign.Name = "cmbAlign";
-            cmbAlign.Size = new Size(121, 28);
-            cmbAlign.ToolTipText = "Set this to be the same as the alignment in your OBS window capture transform";
-            cmbAlign.DropDownClosed += cmbAlign_DropDownClosed;
-            // 
-            // toolStripSeparator2
-            // 
-            toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(6, 27);
-            // 
             // btnEvents
             // 
             btnEvents.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -225,6 +147,16 @@
             btnEvents.Text = "Edit Events";
             btnEvents.ToolTipText = "Open the event editor";
             btnEvents.Click += btnEvents_Click;
+            // 
+            // btnConfig
+            // 
+            btnConfig.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnConfig.Image = (Image)resources.GetObject("btnConfig.Image");
+            btnConfig.ImageTransparentColor = Color.Magenta;
+            btnConfig.Name = "btnConfig";
+            btnConfig.Size = new Size(47, 24);
+            btnConfig.Text = "Config";
+            btnConfig.Click += btnConfig_Click;
             // 
             // statusStrip1
             // 
@@ -270,11 +202,6 @@
             lblCountdown.Text = "00:00";
             lblCountdown.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // fontDialog
-            // 
-            fontDialog.AllowScriptChange = false;
-            fontDialog.FontMustExist = true;
-            // 
             // timer1
             // 
             timer1.Interval = 1000;
@@ -309,14 +236,7 @@
         private ToolStrip toolStrip1;
         private StatusStrip statusStrip1;
         private Label lblCountdown;
-        private ToolStripLabel toolStripLabel1;
-        private ToolStripTextBox txtBackColor;
         private MaskedTextBox maskedTextBox1;
-        private ToolStripButton btnFont;
-        private FontDialog fontDialog;
-        private ToolStripSeparator toolStripSeparator1;
-        private ToolStripTextBox txtForeColor;
-        private ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.Timer timer1;
         private ToolStripButton btnEvents;
         private ToolStripSeparator toolStripSeparator3;
@@ -328,10 +248,8 @@
         private ToolStripButton btnReset;
         private ToolStripButton btnAdd30s;
         private ToolStripButton btnAdd60s;
-        private ToolStripLabel toolStripLabel2;
-        private ToolStripComboBox cmbAlign;
-        private ToolStripSeparator toolStripSeparator4;
         private ToolStripStatusLabel lblVNyan;
         private ToolStripStatusLabel lblMixItUp;
+        private ToolStripButton btnConfig;
     }
 }

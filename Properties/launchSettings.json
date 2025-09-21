@@ -1,8 +1,7 @@
 {
   "profiles": {
     "StreamStartingTimer": {
-      "commandName": "Project",
-      "commandLineArgs": "-m 5"
+      "commandName": "Project"
     }
   }
 }
