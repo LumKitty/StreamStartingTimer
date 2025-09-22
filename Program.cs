@@ -20,9 +20,9 @@ using WatsonWebsocket;
 namespace StreamStartingTimer
 {
     public static class Shared {
-        public static CSettings CurSettings;
+        public static CSettings CurSettings = new CSettings();
         public static List<TimerEvent> TimerEvents = new();
-        public const string Version = "v0.2";
+        public const string Version = "v0.3";
         public const string TimeFormat = @"mm\:ss";
         public static bool VNyanConnected = false;
         public static bool MixItUpConnected = false;
@@ -153,8 +153,8 @@ namespace StreamStartingTimer
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
             int StartTime = 0;
-            string ConfigFile = Application.StartupPath + "\\DefaultConfig.json";
-            string EventsFile = Application.StartupPath + "\\DefaultEvents.json";
+            string ConfigFile = Application.StartupPath + "DefaultConfig.json";
+            string EventsFile = Application.StartupPath + "DefaultEvents.json";
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(o => {
                     if (o.Events != null) {
@@ -181,9 +181,8 @@ namespace StreamStartingTimer
                     }
                 }
             );
-
+            Shared.CurSettings = new CSettings();
             if (!File.Exists(ConfigFile)) {
-                Shared.CurSettings = new CSettings();
                 if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
                     Process myProcess = new Process();
                     myProcess.StartInfo.UseShellExecute = true;
@@ -192,7 +191,7 @@ namespace StreamStartingTimer
                     myProcess.Dispose();
                 }
             } else { 
-                Shared.CurSettings = new CSettings(ConfigFile);
+                Shared.CurSettings.LoadConfig(ConfigFile);
             }
             if (File.Exists(EventsFile)) {
                 Shared.TimerEvents = Shared.LoadEvents(EventsFile);

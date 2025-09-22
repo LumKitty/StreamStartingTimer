@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.CSharp.RuntimeBinder;
+using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -9,33 +11,41 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace StreamStartingTimer {
+    static class Defaults {
+        public const string VNyanURL = "ws://localhost:8000/vnyan";
+        public const string MixItUpURL = "http://localhost:8911/api/v2";
+        public const ContentAlignment Alignment = ContentAlignment.TopLeft;
+        public const MIUPlatforms MixItUpPlatform = MIUPlatforms.Twitch;
+        public static readonly Color FGCol = Color.Black;
+        public static readonly Color BGCol = Color.Lime;
+        public static readonly Font Font = new Font("Arial", 128);
+        public static readonly TimeSpan TestTime = TimeSpan.FromMinutes(5);
+        public static readonly Size Dimensions = new Size(600, 300);
+        public static readonly Point Location = new Point((Screen.PrimaryScreen.Bounds.Size.Width  - Dimensions.Width)  / 2 + Screen.PrimaryScreen.Bounds.X ,
+                                                          (Screen.PrimaryScreen.Bounds.Size.Height - Dimensions.Height) / 2 + Screen.PrimaryScreen.Bounds.Y);
+    }
+
     public enum MIUPlatforms {
         Twitch = 0,
         YouTube = 1,
         Trovo = 2
     }
+
     public class Settings {
-        [DisplayName("VNyan URL")]
-        [CategoryAttribute("Config"), DescriptionAttribute("The URL of VNyan's websocket API")]
-        public virtual string VNyanURL { get; set; }
 
-        [CategoryAttribute("Config"), DescriptionAttribute("The URL of MixItUp's HTTP API\r\nPlease remember to enable this in MIU: Settings -> Developer API -> Connect")]
-        [DisplayName("MixItUp URL")]
-        public virtual string MixItUpURL { get; set; }
-
-        [CategoryAttribute("Appearance"), DescriptionAttribute("Clock font")]
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Clock font")]
         public virtual Font Font { get; set; }
 
-        [CategoryAttribute("Appearance"), DescriptionAttribute("Clock font colour")]
-        [DisplayName("Clock foreground colour")]
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Clock font colour")]
+        [DisplayName("Foreground colour")]
         public virtual Color FGCol { get; set; }
 
-        [DisplayName("Clock background colour")]
-        [CategoryAttribute("Appearance"), DescriptionAttribute("Please remember to greenscreen this in OBS using a Chroma Key filter")]
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Please remember to greenscreen this in OBS using a Chroma Key filter\r\nYou can type a custom colour using the form: 42,0,69")]
+        [DisplayName("Background colour")]
         public virtual Color BGCol { get; set; }
 
-        [DisplayName("Clock text alignment")]
-        [CategoryAttribute("Appearance"), DescriptionAttribute("Please set this to match your \"Positional Alignment\" setting in the OBS transform")]
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Please set this to match your \"Positional Alignment\" setting in the OBS transform")]
+        [DisplayName("Text alignment")]
         public virtual ContentAlignment Alignment { get; set; }
 
         [Browsable(false)]
@@ -45,30 +55,36 @@ namespace StreamStartingTimer {
         public virtual Size Dimensions { get; set; }
 
         [DisplayName("Default MIU platform")]
-        [CategoryAttribute("Config"), DescriptionAttribute("Set to your primary streaming platform. Can be overridden per-event if necessary")]
+        [CategoryAttribute("Settings"), DescriptionAttribute("Set to your primary streaming platform. Can be overridden per-event if necessary")]
         public virtual MIUPlatforms MixItUpPlatform { get; set; }
 
         [DisplayName("Default time")]
-        [CategoryAttribute("Config"), DescriptionAttribute("When the app starts or the timer is reset, what do we reset to?")]
+        [CategoryAttribute("Settings"), DescriptionAttribute("When the timer is reset, what do we reset to?\r\nAlso used if the app is launched without specifying a time on the commandline")]
         public TimeSpan TestTime { get; set; }
 
+        [DisplayName("VNyan URL")]
+        [CategoryAttribute("Settings"), DescriptionAttribute("The URL of VNyan's websocket API")]
+        public virtual string VNyanURL { get; set; }
+
+        [CategoryAttribute("Settings"), DescriptionAttribute("The URL of MixItUp's HTTP API\r\nPlease remember to enable this in MIU: Settings -> Developer API -> Connect")]
+        [DisplayName("MixItUp URL")]
+        public virtual string MixItUpURL { get; set; }
+
         private void Init() {
-            Font font = new Font("Arial", 72);
-            BGCol = Color.FromArgb(0, 255, 0);
-            FGCol = Color.FromArgb(0, 0, 0);
-            Alignment = ContentAlignment.TopLeft;
-            VNyanURL = "ws://localhost:8000/vnyan";
-            MixItUpURL = "http://localhost:8911/api/v2";
-            MixItUpPlatform = MIUPlatforms.Twitch;
-            TestTime = TimeSpan.FromMinutes(5);
+            Font = Defaults.Font;
+            BGCol = Defaults.BGCol;
+            FGCol = Defaults.FGCol;
+            Alignment = Defaults.Alignment;
+            VNyanURL = Defaults.VNyanURL;
+            MixItUpURL = Defaults.MixItUpURL;
+            MixItUpPlatform = Defaults.MixItUpPlatform;
+            TestTime = Defaults.TestTime;
+            Location = Defaults.Location;
+            Dimensions = Defaults.Dimensions;
         }
         
         public Settings() {
             Init();
-        }
-        public Settings(string ConfigFile) {
-            Init();
-            LoadConfig(ConfigFile);
         }
 
         public void LoadConfig(string ConfigFile) {
@@ -78,17 +94,17 @@ namespace StreamStartingTimer {
                     if ((int)Config.X < SystemInformation.VirtualScreen.Width - 5 &&  // Safety in case monitor
                     (int)Config.Y < SystemInformation.VirtualScreen.Height - 5) { // size has changed
                         Location = new Point((int)Config.X, (int)Config.Y);
-                        Dimensions = new Size((int)Config.Width, (int)Config.Height);
                     }
-                } catch { }
-                try { BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor); } catch { }
-                try { FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor); } catch { }
-                try { Alignment = (ContentAlignment)Config.Alignment; } catch { }
-                try { Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle); } catch { }
-                try { VNyanURL = Config.VNyanURL; } catch { }
-                try { MixItUpURL = Config.MixItUpURL; } catch { }
-                try { MixItUpPlatform = Shared.GetMiuPlatform(Config.MixItUpPlatform.ToString(), MIUPlatforms.Twitch); } catch { }
-                try { TestTime = TimeSpan.FromSeconds((int)Config.TestTime); } catch { }
+                } catch (RuntimeBinderException) { }
+                try { Dimensions = new Size((int)Config.Width, (int)Config.Height);                                    } catch { }
+                try { BGCol = ColorTranslator.FromHtml((string)Config.BackgroundColor);                                } catch { }
+                try { FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor);                                } catch { }
+                try { Alignment = (ContentAlignment)Enum.Parse(typeof(ContentAlignment), (string)Config.Alignment);    } catch { }
+                try { Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle);     } catch { }
+                try { VNyanURL = Config.VNyanURL;                                                                      } catch { }
+                try { MixItUpURL = Config.MixItUpURL;                                                                  } catch { }
+                try { MixItUpPlatform = (MIUPlatforms)Enum.Parse(typeof(MIUPlatforms), (string)Config.MixItUpPlatform);} catch { }
+                try { TestTime = TimeSpan.FromSeconds((int)Config.TestTime);                                           } catch { }
             } 
         }
 
@@ -96,10 +112,10 @@ namespace StreamStartingTimer {
             JObject Config = new JObject(
                 new JProperty("FontName", Font.Name),
                 new JProperty("FontSize", Font.Size),
-                new JProperty("FontStyle", (int)Font.Style),
+                new JProperty("FontStyle", Font.Style.ToString()),
                 new JProperty("BackgroundColor", ColorTranslator.ToHtml(BGCol)),
                 new JProperty("ForegroundColor", ColorTranslator.ToHtml(FGCol)),
-                new JProperty("Alignment", Convert.ToInt32(Alignment)),
+                new JProperty("Alignment", Alignment.ToString()),
                 new JProperty("X", Location.X),
                 new JProperty("Y", Location.Y),
                 new JProperty("Width", Dimensions.Width),
@@ -107,7 +123,7 @@ namespace StreamStartingTimer {
                 new JProperty("VNyanURL", VNyanURL),
                 new JProperty("MixItUpURL", MixItUpURL),
                 new JProperty("MixItUpPlatform", MixItUpPlatform.ToString()),
-                new JProperty("TestTime", TestTime.TotalSeconds)
+                new JProperty("TestTime", (int)TestTime.TotalSeconds)
             );
             File.WriteAllText(ConfigFile, Config.ToString());
         }
@@ -130,7 +146,9 @@ namespace StreamStartingTimer {
     public class CSettings : Settings, INotifyPropertyChanged {
         private static Settings _Settings = new Settings();
 
-        public CSettings() { }
+        public CSettings() {
+            //_Settings = new Settings();
+        }
         public CSettings(string ConfigFile) {
             _Settings.LoadConfig(ConfigFile);
         }

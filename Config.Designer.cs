@@ -37,14 +37,16 @@
             propertyGrid1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             propertyGrid1.Location = new Point(0, 0);
             propertyGrid1.Name = "propertyGrid1";
-            propertyGrid1.Size = new Size(800, 411);
+            propertyGrid1.PropertySort = PropertySort.Categorized;
+            propertyGrid1.Size = new Size(488, 369);
             propertyGrid1.TabIndex = 0;
+            propertyGrid1.ToolbarVisible = false;
             propertyGrid1.PropertyValueChanged += propertyGrid1_PropertyValueChanged;
             // 
             // btnOk
             // 
             btnOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnOk.Location = new Point(713, 417);
+            btnOk.Location = new Point(401, 375);
             btnOk.Name = "btnOk";
             btnOk.Size = new Size(75, 23);
             btnOk.TabIndex = 1;
@@ -55,7 +57,7 @@
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.Location = new Point(632, 417);
+            btnCancel.Location = new Point(320, 375);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(75, 23);
             btnCancel.TabIndex = 2;
@@ -82,7 +84,7 @@
             // btnSave
             // 
             btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnSave.Location = new Point(551, 417);
+            btnSave.Location = new Point(239, 375);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(75, 23);
             btnSave.TabIndex = 8;
@@ -93,7 +95,7 @@
             // btnLoad
             // 
             btnLoad.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnLoad.Location = new Point(470, 417);
+            btnLoad.Location = new Point(158, 375);
             btnLoad.Name = "btnLoad";
             btnLoad.Size = new Size(75, 23);
             btnLoad.TabIndex = 9;
@@ -107,7 +109,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(488, 408);
             Controls.Add(btnLoad);
             Controls.Add(btnSave);
             Controls.Add(btnCancel);
