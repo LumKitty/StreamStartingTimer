@@ -12,9 +12,11 @@ using WatsonWebsocket;
 
 namespace StreamStartingTimer {
     public partial class Clock : Form {
-        private int SecondsToGo;
+        public int SecondsToGo { get; set; }
         private Binding bndTestTime;
-        //string ConfigFile;
+        private ClockSpout ImageClock;
+        private Task ImageClockUpdaterTask;
+        public bool TimerRunning;
 
         private void TimeSpanToString(object sender, ConvertEventArgs cevent) {
             if (cevent.DesiredType != typeof(string)) return;
@@ -111,6 +113,11 @@ namespace StreamStartingTimer {
         }
 
         public void StartCountdown(int CountdownTime) {
+            if (Shared.CurSettings.SpoutEnabled) {
+                TimerRunning = true;
+                ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
+                ImageClockUpdaterTask = Task.Run(() => ImageClock.UpdateTexture());
+            }
             lblCountdown.DataBindings.Remove(bndTestTime);
             SecondsToGo = CountdownTime;
             timer1.Enabled = true;
@@ -168,6 +175,7 @@ namespace StreamStartingTimer {
             }
             lblNextEvent.Text = StatusLabel;
             if (SecondsToGo <= 0) {
+                TimerRunning = false;
                 timer1.Stop();
                 if (QuitWhenDone) {
                     Thread.Sleep(1000);
@@ -216,6 +224,7 @@ namespace StreamStartingTimer {
             btnStart.Enabled = true;
             btnEvents.Enabled = true;
             timer1.Enabled = false;
+            TimerRunning = false;
             lblNextEvent.Text = DefaultStatusBar;
             lblCountdown.DataBindings.Add(bndTestTime);
         }
@@ -247,6 +256,8 @@ namespace StreamStartingTimer {
                 Shared.CurSettings.MixItUpURL = TempSettings.MixItUpURL;
                 Shared.CurSettings.MixItUpPlatform = TempSettings.MixItUpPlatform;
                 Shared.CurSettings.TestTime = TempSettings.TestTime;
+                Shared.CurSettings.SpoutEnabled = TempSettings.SpoutEnabled;
+                Shared.CurSettings.FontDir = TempSettings.FontDir;
             }
         }
     }

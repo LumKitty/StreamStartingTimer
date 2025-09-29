@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,10 @@ namespace StreamStartingTimer {
         public static readonly Size Dimensions = new Size(600, 300);
         public static readonly Point Location = new Point((Screen.PrimaryScreen.Bounds.Size.Width  - Dimensions.Width)  / 2 + Screen.PrimaryScreen.Bounds.X ,
                                                           (Screen.PrimaryScreen.Bounds.Size.Height - Dimensions.Height) / 2 + Screen.PrimaryScreen.Bounds.Y);
+        public const bool SpoutEnabled = false;
+        public const string SpoutName = "StreamStartingTimer";
+        public static readonly string FontDir = Application.StartupPath + "\\DefaultFont";
+        //public static readonly string FontDir = "D:\\Twitch\\Software\\StreamStartingTimer\\DefaultFont";
     }
 
     public enum MIUPlatforms {
@@ -70,6 +75,15 @@ namespace StreamStartingTimer {
         [DisplayName("MixItUp URL")]
         public virtual string MixItUpURL { get; set; }
 
+        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("")]
+        public virtual bool SpoutEnabled { get; set; }
+
+        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("")]
+        public virtual string SpoutName { get; set; }
+
+        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("")]
+        public virtual string FontDir { get; set; }
+
         private void Init() {
             Font = Defaults.Font;
             BGCol = Defaults.BGCol;
@@ -81,6 +95,9 @@ namespace StreamStartingTimer {
             TestTime = Defaults.TestTime;
             Location = Defaults.Location;
             Dimensions = Defaults.Dimensions;
+            SpoutEnabled = Defaults.SpoutEnabled;
+            SpoutName = Defaults.SpoutName;
+            FontDir = Defaults.FontDir;
         }
         
         public Settings() {
@@ -105,6 +122,9 @@ namespace StreamStartingTimer {
                 try { MixItUpURL = Config.MixItUpURL;                                                                  } catch { }
                 try { MixItUpPlatform = (MIUPlatforms)Enum.Parse(typeof(MIUPlatforms), (string)Config.MixItUpPlatform);} catch { }
                 try { TestTime = TimeSpan.FromSeconds((int)Config.TestTime);                                           } catch { }
+                try { SpoutEnabled = Config.SpoutEnabled; } catch { }
+                try { SpoutName = Config.SpoutName; } catch { }
+                try { FontDir = Config.FontDir; } catch { }
             } 
         }
 
@@ -123,7 +143,10 @@ namespace StreamStartingTimer {
                 new JProperty("VNyanURL", VNyanURL),
                 new JProperty("MixItUpURL", MixItUpURL),
                 new JProperty("MixItUpPlatform", MixItUpPlatform.ToString()),
-                new JProperty("TestTime", (int)TestTime.TotalSeconds)
+                new JProperty("TestTime", (int)TestTime.TotalSeconds),
+                new JProperty("SpoutEnabled", SpoutEnabled),
+                new JProperty("SpoutName", SpoutName),
+                new JProperty("FontDir", FontDir)
             );
             File.WriteAllText(ConfigFile, Config.ToString());
         }
@@ -139,6 +162,8 @@ namespace StreamStartingTimer {
             TempSettings.MixItUpURL = this.MixItUpURL;
             TempSettings.MixItUpPlatform = this.MixItUpPlatform;
             TempSettings.TestTime = this.TestTime;
+            TempSettings.SpoutEnabled = this.SpoutEnabled;
+            TempSettings.FontDir = this.FontDir;
             return TempSettings;
         }
     }
