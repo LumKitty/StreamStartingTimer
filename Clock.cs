@@ -14,7 +14,7 @@ namespace StreamStartingTimer {
     public partial class Clock : Form {
         public int SecondsToGo { get; set; }
         private Binding bndTestTime;
-        private ClockSpout ImageClock;
+        //private ClockSpout ImageClock;
         private Task ImageClockUpdaterTask;
         public bool TimerRunning;
 
@@ -30,10 +30,10 @@ namespace StreamStartingTimer {
             lblCountdown.DataBindings.Add("ForeColor", Shared.CurSettings, "FGCol");
             lblCountdown.DataBindings.Add("Font", Shared.CurSettings, "Font");
             lblCountdown.DataBindings.Add("TextAlign", Shared.CurSettings, "Alignment");
-            bndTestTime = new Binding ("Text", Shared.CurSettings, "TestTime");
+            bndTestTime = new Binding("Text", Shared.CurSettings, "TestTime");
             bndTestTime.Format += new ConvertEventHandler(TimeSpanToString);
             lblCountdown.DataBindings.Add(bndTestTime);
-            
+
             if (StartTime > 0) {
                 StartTimer(StartTime);
                 QuitWhenDone = true;
@@ -44,7 +44,7 @@ namespace StreamStartingTimer {
         }
 
         const string DefaultStatusBar = Shared.Version + " - github.com/LumKitty";
-        
+
         private bool QuitWhenDone = false;
 
         void VNyanConnected(object sender, EventArgs args) {
@@ -115,8 +115,8 @@ namespace StreamStartingTimer {
         public void StartCountdown(int CountdownTime) {
             if (Shared.CurSettings.SpoutEnabled) {
                 TimerRunning = true;
-                ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
-                ImageClockUpdaterTask = Task.Run(() => ImageClock.UpdateTexture());
+                //ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
+                ImageClockUpdaterTask = Task.Run(() => ClockSpout.UpdateTexture());
             }
             lblCountdown.DataBindings.Remove(bndTestTime);
             SecondsToGo = CountdownTime;
@@ -127,7 +127,7 @@ namespace StreamStartingTimer {
             lblCountdown.Text = SecondsToGo.ToString(Shared.TimeFormat);
         }
         private void UpdateClock(int SecondsToGo) {
-            UpdateClock (TimeSpan.FromSeconds(SecondsToGo));
+            UpdateClock(TimeSpan.FromSeconds(SecondsToGo));
         }
 
         private void timer1_Tick(object sender, EventArgs e) {
@@ -135,7 +135,7 @@ namespace StreamStartingTimer {
             int n;
             int i;
             int ExtraSimultaneousEvents = 0;
-            
+
             SecondsToGo--;
             UpdateClock(SecondsToGo);
 
@@ -259,6 +259,10 @@ namespace StreamStartingTimer {
                 Shared.CurSettings.SpoutEnabled = TempSettings.SpoutEnabled;
                 Shared.CurSettings.FontDir = TempSettings.FontDir;
             }
+        }
+
+        private void Clock_FormClosing(object sender, FormClosingEventArgs e) {
+            ClockSpout.Cleanup();
         }
     }
 }

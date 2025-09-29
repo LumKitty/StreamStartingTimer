@@ -28,48 +28,16 @@ using static TerraFX.Interop.Windows.Windows;
 namespace StreamStartingTimer {
 
 
-    public class ClockSpout : IDisposable {
+    public static class ClockSpout {
+        static Bitmap[] ClockFont = new Bitmap[12];
+        static int NumberWidth;
+        static int NumberHeight;
+        static int ColonWidth;
+        static int ClockWidth;
+        static int ClockArraySize;
+        static SpoutSender spoutSender = null;
 
-        private static Bitmap[] ClockFont = new Bitmap[12];
-        private static SpoutSender spoutSender = null;
-        private static int NumberWidth;
-        private static int NumberHeight;
-        private static int ColonWidth;
-        private static int ClockWidth;
-        private static int ClockArraySize;
-        private static IntPtr Handle = Process.GetCurrentProcess().MainWindowHandle;
-        private const System.Drawing.Imaging.PixelFormat TexturePixelFormat = System.Drawing.Imaging.PixelFormat.Format32bppRgb;
-
-        public unsafe ClockSpout(string FontDir) {
-            //Bitmap TempImage;
-            //TempImage = new Bitmap(FontDir + "\\space.png");
-
-            //ClockFont[11] = TempImage.LockBits(new System.Drawing.Rectangle(0, 0, TempImage.Size.Width, TempImage.Size.Height), ImageLockMode.ReadOnly, TexturePixelFormat);
-            ClockFont[11] = new Bitmap(FontDir + "\\space.png");
-            NumberWidth = ClockFont[11].Width;
-            NumberHeight = ClockFont[11].Height;
-            for (int n = 0; n < 10; n++) {
-                ClockFont[n] = new Bitmap(FontDir + "\\"+n.ToString()+".png");
-                if (ClockFont[n].Width != NumberWidth || ClockFont[n].Height != NumberHeight) {
-                    Shared.CurSettings.SpoutEnabled = false;
-                    System.Windows.Forms.MessageBox.Show(n.ToString() + ".png is not the same size (" + ClockFont[n].Width.ToString() + "x" + ClockFont[n].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                //ClockFont[n] = TempImage.LockBits(new System.Drawing.Rectangle(0,0,TempImage.Size.Width,TempImage.Size.Height), ImageLockMode.ReadOnly, TexturePixelFormat);
-            }
-            ClockFont[10] = new Bitmap(FontDir + "\\colon.png");
-            //ClockFont[10] = TempImage.LockBits(new System.Drawing.Rectangle(0, 0, TempImage.Size.Width, TempImage.Size.Height), ImageLockMode.ReadOnly, TexturePixelFormat);
-            ColonWidth = ClockFont[10].Width;
-            if (ClockFont[10].Height != NumberHeight) {
-                Shared.CurSettings.SpoutEnabled = false;
-                System.Windows.Forms.MessageBox.Show("colon.png is not the same height (" + ClockFont[10].Width.ToString() + "x" + ClockFont[10].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            ClockWidth = NumberWidth * 4 + ColonWidth;
-            ClockArraySize = (ClockWidth * NumberHeight) * 4;
-            //GetImageFromTime(0,ref ClockTexture);
-            
-        }
-
-        public void GetImageFromTime(int SecondsToGo, ref byte[] ClockTexture) {
+        public static void GetImageFromTime(int SecondsToGo, ref byte[] ClockTexture) {
             //byte[] ClockTexture = new byte[ClockArraySize];
             string CurTime;
             int CurDigit;
@@ -126,7 +94,30 @@ namespace StreamStartingTimer {
             //return ClockTexture;
         }
 
-        public unsafe async Task UpdateTexture() {
+        public static unsafe async Task UpdateTexture() {
+
+            IntPtr Handle = Process.GetCurrentProcess().MainWindowHandle;
+            System.Drawing.Imaging.PixelFormat TexturePixelFormat = System.Drawing.Imaging.PixelFormat.Format32bppRgb;
+
+            ClockFont[11] = new Bitmap(Shared.CurSettings.FontDir + "\\space.png");
+            NumberWidth = ClockFont[11].Width;
+            NumberHeight = ClockFont[11].Height;
+            for (int n = 0; n < 10; n++) {
+                ClockFont[n] = new Bitmap(Shared.CurSettings.FontDir + "\\" + n.ToString() + ".png");
+                if (ClockFont[n].Width != NumberWidth || ClockFont[n].Height != NumberHeight) {
+                    Shared.CurSettings.SpoutEnabled = false;
+                    System.Windows.Forms.MessageBox.Show(n.ToString() + ".png is not the same size (" + ClockFont[n].Width.ToString() + "x" + ClockFont[n].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            ClockFont[10] = new Bitmap(Shared.CurSettings.FontDir + "\\colon.png");
+            ColonWidth = ClockFont[10].Width;
+            if (ClockFont[10].Height != NumberHeight) {
+                Shared.CurSettings.SpoutEnabled = false;
+                System.Windows.Forms.MessageBox.Show("colon.png is not the same height (" + ClockFont[10].Width.ToString() + "x" + ClockFont[10].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            ClockWidth = NumberWidth * 4 + ColonWidth;
+            ClockArraySize = (ClockWidth * NumberHeight) * 4;
+
             int OldTime = -1;
             byte[] ClockTexture = new byte[ClockArraySize];
 
@@ -171,7 +162,7 @@ namespace StreamStartingTimer {
                         else i = 0;
                     }
                 }
-                System.Windows.Forms.MessageBox.Show("Timer Stopped");
+                //System.Windows.Forms.MessageBox.Show("Timer Stopped");
                 for (int n = 0; n < ClockArraySize; n++) {
                     ClockTexture[n] = 0;
                 }
@@ -180,7 +171,7 @@ namespace StreamStartingTimer {
             }
         }
 
-        public void Dispose() {
+        public static void Cleanup() {
             spoutSender.Dispose();
         }
 

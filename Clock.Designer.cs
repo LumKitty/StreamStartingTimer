@@ -37,6 +37,7 @@
             btnAdd60s = new ToolStripButton();
             toolStripSeparator3 = new ToolStripSeparator();
             btnEvents = new ToolStripButton();
+            toolStripSeparator1 = new ToolStripSeparator();
             btnConfig = new ToolStripButton();
             statusStrip1 = new StatusStrip();
             lblVNyan = new ToolStripStatusLabel();
@@ -45,9 +46,10 @@
             lblNextEvent = new ToolStripStatusLabel();
             lblCountdown = new Label();
             timer1 = new System.Windows.Forms.Timer(components);
-            toolStripSeparator1 = new ToolStripSeparator();
+            bindingSource1 = new BindingSource(components);
             toolStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)bindingSource1).BeginInit();
             SuspendLayout();
             // 
             // toolStrip1
@@ -139,6 +141,11 @@
             btnEvents.ToolTipText = "Open the event editor";
             btnEvents.Click += btnEvents_Click;
             // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(6, 27);
+            // 
             // btnConfig
             // 
             btnConfig.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -198,11 +205,6 @@
             timer1.Interval = 1000;
             timer1.Tick += timer1_Tick;
             // 
-            // toolStripSeparator1
-            // 
-            toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(6, 27);
-            // 
             // Clock
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -214,12 +216,14 @@
             MaximizeBox = false;
             Name = "Clock";
             Text = "Stream Startup Timer";
+            FormClosing += Clock_FormClosing;
             Load += Clock_Load;
             Shown += Clock_Shown;
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)bindingSource1).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -246,5 +250,6 @@
         private ToolStripStatusLabel lblMixItUp;
         private ToolStripButton btnConfig;
         private ToolStripSeparator toolStripSeparator1;
+        private BindingSource bindingSource1;
     }
 }
