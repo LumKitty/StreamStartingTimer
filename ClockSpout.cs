@@ -1,7 +1,6 @@
 ﻿using Silk.NET.Core.Contexts;
 using Silk.NET.Core.Loader;
 using Silk.NET.Maths;
-using Silk.NET.Windowing;
 using Spout.Interop;
 using System;
 using System.Collections.Generic;
@@ -172,7 +171,7 @@ namespace StreamStartingTimer {
         }
 
         public static void Cleanup() {
-            spoutSender.Dispose();
+            if (spoutSender != null) { spoutSender.Dispose(); }
         }
 
         static unsafe void SetOpenglPixelFormat(HWND window) {
