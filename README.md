@@ -5,9 +5,7 @@ Events can be VNyan websockets, MixItUp commands or external executables
 * No ads, no premium version, no subscription, no monetization of any sort  
 * Lightweight portable executable (around 1MB in size)
 * No registry settings, just config.json files in the exe directory
-<img width="809" height="785" alt="image" src="https://github.com/user-attachments/assets/7426f618-508f-4720-8524-ff4a6b096586" />
-
-
+<img width="1145" height="795" alt="image" src="https://github.com/user-attachments/assets/4efce1b9-e3fa-4a8c-adee-e5867b421343" />
 
 ## Quick Start
 1. Requires [.net 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). This should already be installed on most modern versions of Windows
@@ -15,10 +13,13 @@ Events can be VNyan websockets, MixItUp commands or external executables
 3. Run StreamStartingTimer.exe
 4. Add a window capture in OBS capturing this application, put this on your "Stream Starting" scene
 5. Add a crop filter to remove the top toolbar and the bottom status bar
-6. Add a Chroma key filter to greenscreen the clock
-7. Click the Clock Font button and set your desired font and size
-8. Close the application
-9. Run StreamStartingTimer.exe -m 5 for a five minute countdown
+6. Change the capture properties:
+   - Window Match Priority: "Match title, otherwise find window of same type"
+   - Capture Cursor: Disabled
+8. Add a Chroma key filter to the capture, leave it on the default greenscreen
+9. Click the Config button and set your desired font and size
+10. Close the application
+11. Run StreamStartingTimer.exe -m 5 for a five minute countdown
 
 ## Usage
 This application is designed to be started from the commandline or launched from a Stream Deck. Commandline options:  
@@ -57,11 +58,11 @@ If you save your events as DefaultEvents.json they will be loaded automatically 
 ### VNyan event
 Sends the payload as a websocket message to VNyan
 ### MixItUp event
-Calls the specified MixItUp command (which must exist) any arguments to the command should go after the space character.
+Calls the specified MixItUp command (which must exist). If you specify any arguments they will be available as $AllArgs in MixItUp
 WARNING: If your MixItUp command has a space in its name, you must use the command ID instead. You can use the "Show MIU" button to get this
 This will be fixed in a future version
 ### EXE event
-Will be run exactly as if you'd typed it at a command prompt (e.g. powershell.exe D:\Twitch\MyStuff.ps1)
+Will be run exactly as if you'd typed it at a command prompt (e.g. powershell.exe). Arguments may be specified, and you can set the window to e.g. Minimised (some apps may override this)
 
 ## Testing
 Running the application without commandline parameters will open it in setup/test mode. Immediately to the right of the +1m button you can set a time, in seconds for the timer to start at. The application will not quit when the timer expires  
@@ -76,6 +77,6 @@ Special use cases that need a bit more work:
 ### VNyan or MixItUp are on a different machine
 Edit DefaultConfig.json and change the VNyanURL or MixItUp URL, replacing localhost with the IP address or name of the machine
 ### Different clock font needed for certain streams
-Copy DefaultConfig.json to e.g. SpecialConfig.json and launch with ```-s SpecialConfig.json```
+Save your config file as something other than DefaultConfig.json and launch with e.g. ```-s SpecialConfig.json```
 ### Different startup events needed e.g. streaming on a different platform
-Save your events as e.g. Twitch.json and Youtube.json and launch with ```-e YouTube.json```
+Save your events as e.g. Twitch.json and Youtube.json and launch with e.g ```-e YouTube.json```
