@@ -18,6 +18,7 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
+using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static TerraFX.Interop.Windows.Windows;
@@ -36,21 +37,19 @@ namespace StreamStartingTimer {
         static int ClockArraySize;
         static SpoutSender spoutSender = null;
 
-        public static void GetImageFromTime(int SecondsToGo, ref byte[] ClockTexture) {
+        public static void GetImageFromTime(int SecondsToGo, nint pClockTexture) {
             //byte[] ClockTexture = new byte[ClockArraySize];
             string CurTime;
             int CurDigit;
             int ColonFix;
+            Int32[] TempLine = new Int32[NumberWidth];
+            UInt32 TempPixel;
+            int y;
+            int x;
 
             CurTime = TimeSpan.FromSeconds(SecondsToGo).ToString(Shared.TimeFormat);
 
             ColonFix = 0;
-            int Location;
-            Color CurPixel;
-
-            //for (int n = 0; n < ClockWidth * NumberHeight * 4; n++) {
-            //    ClockTexture[n] = (byte)Random.Next(255);
-            //}
 
             for (int Digit = 0; Digit < 5; Digit++) {
                 if (Digit == 2) {
@@ -64,28 +63,13 @@ namespace StreamStartingTimer {
                     if (CurDigit < 0 && CurDigit > 9) { throw new Exception("Digit is not 0-9 or space"); }
                 }
 
-                //System.Windows.Forms.MessageBox.Show(ClockFont[Digit].GetPixel(3, 3).ToString());
-
                 if (CurDigit != 10) {
-                    int y;
-                    int x;
-
                     for (y = 0; y < NumberHeight; y++) {
                         for (x = 0; x < NumberWidth; x++) {
-                            Location = (y * ClockWidth * 4) + (x * 4);
-                            Location += ((Digit * NumberWidth) + ColonFix) *4;
-
-                            CurPixel = ClockFont[CurDigit].GetPixel(x, y);
-                            ClockTexture[Location] = CurPixel.R;
-                            ClockTexture[Location + 1] = CurPixel.G;
-                            ClockTexture[Location + 2] = CurPixel.B;
-                            ClockTexture[Location + 3] = CurPixel.A;
-
-                            /*ClockTexture[Location] = (byte)Random.Next(255);
-                            ClockTexture[Location + 1] = (byte)Random.Next(255);
-                            ClockTexture[Location + 2] = (byte)Random.Next(255);
-                            ClockTexture[Location + 3] = (byte)Random.Next(255);*/
+                            TempPixel = (UInt32)ClockFont[CurDigit].GetPixel(x, y).ToArgb();
+                            TempLine[x] = (Int32)(TempPixel & 0xFF00FF00 | (((TempPixel & 0x00FF0000) >> 16)) | (((TempPixel & 0x000000FF) << 16)));
                         }
+                        Marshal.Copy(TempLine, 0, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth);
                     }
 
                 }
@@ -96,7 +80,7 @@ namespace StreamStartingTimer {
         public static unsafe async Task UpdateTexture() {
 
             IntPtr Handle = Process.GetCurrentProcess().MainWindowHandle;
-            System.Drawing.Imaging.PixelFormat TexturePixelFormat = System.Drawing.Imaging.PixelFormat.Format32bppRgb;
+            System.Drawing.Imaging.PixelFormat TexturePixelFormat = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
 
             ClockFont[11] = new Bitmap(Shared.CurSettings.FontDir + "\\space.png");
             NumberWidth = ClockFont[11].Width;
@@ -118,7 +102,7 @@ namespace StreamStartingTimer {
             ClockArraySize = (ClockWidth * NumberHeight) * 4;
 
             int OldTime = -1;
-            byte[] ClockTexture = new byte[ClockArraySize];
+            nint pClockTexture = Marshal.AllocHGlobal(ClockArraySize);
 
             if (spoutSender == null) {
                 SetOpenglPixelFormat((HWND)Handle);
@@ -131,43 +115,32 @@ namespace StreamStartingTimer {
                 spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
             }
 
-            int Location;
-            Color CurPixel;
+            Int32[] TempLine = new Int32[ColonWidth];
+            UInt32 TempPixel;
+
             for (int y = 0; y < NumberHeight; y++) {
                 for (int x = 0; x < ColonWidth; x++) {
-                    Location = (y * ClockWidth * 4) + (x * 4);
-                    Location += ((2 * NumberWidth)) * 4;
-
-                    CurPixel = ClockFont[10].GetPixel(x, y);
-                    ClockTexture[Location] = CurPixel.R;
-                    ClockTexture[Location + 1] = CurPixel.G;
-                    ClockTexture[Location + 2] = CurPixel.B;
-                    ClockTexture[Location + 3] = CurPixel.A;
+                    TempPixel = (UInt32)ClockFont[10].GetPixel(x, y).ToArgb();
+                    TempPixel = TempPixel & 0xFF00FF00 | (((TempPixel & 0x00FF0000) >> 16)) | (((TempPixel & 0x000000FF) << 16));
+                    TempLine[x] = (Int32)TempPixel;
                 }
+                Marshal.Copy(TempLine, 0, pClockTexture + (y * ClockWidth * 4) + (((2 * NumberWidth)) * 4), ColonWidth);
             }
 
             int i = 0;
-            fixed (byte* pData = ClockTexture) {  // Get the pointer of the byte array
-                while (Shared.frmClock.TimerRunning) {
-                    if (Shared.frmClock.SecondsToGo != OldTime) {
-                        OldTime = Shared.frmClock.SecondsToGo;
-                        GetImageFromTime(Shared.frmClock.SecondsToGo, ref ClockTexture);
-
-                        Console.WriteLine($"Sending (i = {i})");
-                        spoutSender.SendImage(pData, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-                        spoutSender.SendImage(pData, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-                        Thread.Sleep(10); // Delay
-                        if (i < 2) i++;
-                        else i = 0;
-                    }
+            while (Shared.frmClock.TimerRunning) {
+                if (Shared.frmClock.SecondsToGo != OldTime) {
+                    OldTime = Shared.frmClock.SecondsToGo;
+                    GetImageFromTime(Shared.frmClock.SecondsToGo, pClockTexture);
+                    Console.WriteLine($"Sending (i = {i})");
+                    spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                    spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                    Thread.Sleep(10); // Delay
+                    if (i < 2) i++;
+                    else i = 0;
                 }
-                //System.Windows.Forms.MessageBox.Show("Timer Stopped");
-                for (int n = 0; n < ClockArraySize; n++) {
-                    ClockTexture[n] = 0;
-                }
-                spoutSender.SendImage(pData, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-                spoutSender.SendImage(pData, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
             }
+            Marshal.FreeHGlobal(pClockTexture);
         }
 
         public static void Cleanup() {
