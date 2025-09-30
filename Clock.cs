@@ -1,3 +1,4 @@
+using CppSharp.AST;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,13 +15,19 @@ namespace StreamStartingTimer {
     public partial class Clock : Form {
         public int SecondsToGo { get; set; }
         private Binding bndTestTime;
-        private ClockSpout ImageClock;
+        private ClockSpout ImageClock = null;
         private Task ImageClockUpdaterTask;
         public bool TimerRunning;
 
         private void TimeSpanToString(object sender, ConvertEventArgs cevent) {
+            string TimeText;
             if (cevent.DesiredType != typeof(string)) return;
-            cevent.Value = ((TimeSpan)cevent.Value).ToString(Shared.TimeFormat);
+            TimeText = ((TimeSpan)cevent.Value).ToString(Shared.TimeFormat);
+            if (!Shared.CurSettings.ShowLeadingZero && TimeText[0] == '0') {
+                TimeText = ' ' + TimeText.Substring(1);
+            }
+
+            cevent.Value = TimeText;
         }
 
         public Clock(int StartTime, string EventsFile) {
@@ -35,7 +42,7 @@ namespace StreamStartingTimer {
             lblCountdown.DataBindings.Add(bndTestTime);
 
             if (StartTime > 0) {
-                StartTimer(StartTime);
+                SecondsToGo = StartTime;
                 QuitWhenDone = true;
             } else {
                 QuitWhenDone = false;
@@ -123,7 +130,11 @@ namespace StreamStartingTimer {
         }
 
         private void UpdateClock(TimeSpan SecondsToGo) {
-            lblCountdown.Text = SecondsToGo.ToString(Shared.TimeFormat);
+            string TimeText = SecondsToGo.ToString(Shared.TimeFormat);
+            if (!Shared.CurSettings.ShowLeadingZero && TimeText[0] == '0') {
+                TimeText = ' ' + TimeText.Substring(1);
+            }
+            lblCountdown.Text = TimeText;
             if (Shared.CurSettings.SpoutEnabled) { ImageClock.UpdateTexture(); }
         }
         private void UpdateClock(int SecondsToGo) {
@@ -241,6 +252,10 @@ namespace StreamStartingTimer {
 
         private void Clock_Shown(object sender, EventArgs e) {
             Connect();
+            OpenGLHandler.InitGL();
+            if (SecondsToGo > 0) {
+                StartTimer(SecondsToGo);
+            }
         }
 
         private void btnConfig_Click(object sender, EventArgs e) {
@@ -264,7 +279,8 @@ namespace StreamStartingTimer {
         }
 
         private void Clock_FormClosing(object sender, FormClosingEventArgs e) {
-            ImageClock.Dispose();
+            if (ImageClock != null) { ImageClock.Dispose(); }
+            OpenGLHandler.CloseGL();
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }

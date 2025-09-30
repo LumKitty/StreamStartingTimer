@@ -20,6 +20,7 @@ namespace StreamStartingTimer {
         public static readonly Color FGCol = Color.Black;
         public static readonly Color BGCol = Color.Lime;
         public static readonly Font Font = new Font("Arial", 128);
+        public const bool ShowLeadingZero = true;
         public static readonly TimeSpan TestTime = TimeSpan.FromMinutes(5);
         public static readonly Size Dimensions = new Size(600, 300);
         public static readonly Point Location = new Point((Screen.PrimaryScreen.Bounds.Size.Width  - Dimensions.Width)  / 2 + Screen.PrimaryScreen.Bounds.X ,
@@ -52,6 +53,10 @@ namespace StreamStartingTimer {
         [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Please set this to match your \"Positional Alignment\" setting in the OBS transform")]
         [DisplayName("Text alignment")]
         public virtual ContentAlignment Alignment { get; set; }
+
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Display 04:20 or   4:20")]
+        [DisplayName("Show Leading Zero")]
+        public virtual bool ShowLeadingZero { get; set; }
 
         [Browsable(false)]
         public virtual Point Location { get; set; }
@@ -89,6 +94,7 @@ namespace StreamStartingTimer {
             BGCol = Defaults.BGCol;
             FGCol = Defaults.FGCol;
             Alignment = Defaults.Alignment;
+            ShowLeadingZero = Defaults.ShowLeadingZero;
             VNyanURL = Defaults.VNyanURL;
             MixItUpURL = Defaults.MixItUpURL;
             MixItUpPlatform = Defaults.MixItUpPlatform;
@@ -118,6 +124,7 @@ namespace StreamStartingTimer {
                 try { FGCol = ColorTranslator.FromHtml((string)Config.ForegroundColor);                                } catch { }
                 try { Alignment = (ContentAlignment)Enum.Parse(typeof(ContentAlignment), (string)Config.Alignment);    } catch { }
                 try { Font = new Font((string)Config.FontName, (int)Config.FontSize, (FontStyle)Config.FontStyle);     } catch { }
+                try { ShowLeadingZero = Config.ShowLeadingZero; } catch { }
                 try { VNyanURL = Config.VNyanURL;                                                                      } catch { }
                 try { MixItUpURL = Config.MixItUpURL;                                                                  } catch { }
                 try { MixItUpPlatform = (MIUPlatforms)Enum.Parse(typeof(MIUPlatforms), (string)Config.MixItUpPlatform);} catch { }
@@ -140,6 +147,7 @@ namespace StreamStartingTimer {
                 new JProperty("Y", Location.Y),
                 new JProperty("Width", Dimensions.Width),
                 new JProperty("Height", Dimensions.Height),
+                new JProperty("ShowLeadingZero", ShowLeadingZero),
                 new JProperty("VNyanURL", VNyanURL),
                 new JProperty("MixItUpURL", MixItUpURL),
                 new JProperty("MixItUpPlatform", MixItUpPlatform.ToString()),
@@ -215,6 +223,14 @@ namespace StreamStartingTimer {
             set {
                 if (_Settings.BGCol == value) return;
                 _Settings.BGCol = value;
+                RaisePropertyChanged("BGCol");
+            }
+        }
+        public override bool ShowLeadingZero {
+            get { return _Settings.ShowLeadingZero; }
+            set {
+                if (_Settings.ShowLeadingZero == value) return;
+                _Settings.ShowLeadingZero = value;
                 RaisePropertyChanged("BGCol");
             }
         }

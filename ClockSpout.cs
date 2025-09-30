@@ -1,10 +1,12 @@
-﻿using Silk.NET.Core.Contexts;
-using Silk.NET.Core.Loader;
-using Silk.NET.Maths;
+﻿//using Silk.NET.Core.Contexts;
+//using Silk.NET.Core.Loader;
+//using TerraFX.Interop.Windows;
+//using static TerraFX.Interop.Windows.Windows;
 using Spout.Interop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
@@ -17,31 +19,38 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
-using TerraFX.Interop.DirectX;
-using TerraFX.Interop.Windows;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static TerraFX.Interop.Windows.Windows;
+
 
 
 
 namespace StreamStartingTimer {
 
-    public static class OpenGLHandler {
+    /*public static class OpenGLHandler {
         static bool GLInitialised = false;
         static IntPtr Handle = Process.GetCurrentProcess().MainWindowHandle;
+        static HDC dc;
+        static HGLRC gctx;
+        static Silk.NET.OpenGL.GL gl;
 
         public static void InitGL() {
-            if (GLInitialised) return; 
+            if (GLInitialised) return;
             GLInitialised = true;
             SetOpenglPixelFormat((HWND)Handle);
-            var dc = GetDC((HWND)Handle);
-            var gctx = wglCreateContext(dc);
+            dc = GetDC((HWND)Handle);
+            gctx = wglCreateContext(dc);
             wglMakeCurrent(dc, gctx);
             ReleaseDC((HWND)Handle, dc);
-            var gl = new Silk.NET.OpenGL.GL(new WindowsGlNativeContext());
+            gl = new Silk.NET.OpenGL.GL(new WindowsGlNativeContext());
         }
+
+        public static void CloseGL() {
+            if (!GLInitialised) return;
+            gl.Dispose();
+        }
+
         static unsafe void SetOpenglPixelFormat(HWND window) {
             // Contains desired pixel format characteristics
             PIXELFORMATDESCRIPTOR pfd = new();
@@ -114,6 +123,21 @@ namespace StreamStartingTimer {
                 return false;
             }
         }
+    }*/
+
+    public static class OpenGLHandler {
+        static bool GLInitialised = false;
+        static OpenTK.GLControl.GLControl GL;
+        public static void InitGL() {
+            if (GLInitialised) { return; }
+            GL = new OpenTK.GLControl.GLControl();
+            GL.MakeCurrent();
+            GLInitialised = true;
+        }
+        public static void CloseGL() {
+            if (!GLInitialised) { return; }
+            GL.Dispose();
+        }
     }
 
     public class ClockSpout : IDisposable {
@@ -142,11 +166,12 @@ namespace StreamStartingTimer {
             ColonFix = 0;
 
             for (int Digit = 0; Digit < 5; Digit++) {
-                if (Digit == 2) {
+                if (!Shared.CurSettings.ShowLeadingZero && (Digit == 0) && (CurTime[Digit]=='0')) {
+                    CurDigit = 11;
+                } else if (Digit == 2) {
                     ColonFix = ColonWidth - NumberWidth;
                     CurDigit = 10;
-                } else { }
-                if (CurTime[Digit] == ' ') {
+                } else if (CurTime[Digit] == ' ') {
                     CurDigit = 11;
                 } else {
                     CurDigit = CurTime[Digit] - 48;
@@ -164,7 +189,6 @@ namespace StreamStartingTimer {
 
                 }
             }
-            //return ClockTexture;
         }
 
         public ClockSpout(string FontDir) {
@@ -188,17 +212,10 @@ namespace StreamStartingTimer {
             ClockArraySize = (ClockWidth * NumberHeight) * 4;
 
             pClockTexture = Marshal.AllocHGlobal(ClockArraySize);
-
-            OpenGLHandler.InitGL();
-            spoutSender = new SpoutSender();
-            spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
-        }
-        
-        public unsafe async void UpdateTexture() {
-
             Int32[] TempLine = new Int32[ColonWidth];
             UInt32 TempPixel;
 
+            // Add the : to the clock texture now. It never needs copying again
             for (int y = 0; y < NumberHeight; y++) {
                 for (int x = 0; x < ColonWidth; x++) {
                     TempPixel = (UInt32)ClockFont[10].GetPixel(x, y).ToArgb();
@@ -207,6 +224,13 @@ namespace StreamStartingTimer {
                 }
                 Marshal.Copy(TempLine, 0, pClockTexture + (y * ClockWidth * 4) + (((2 * NumberWidth)) * 4), ColonWidth);
             }
+
+            OpenGLHandler.InitGL();
+            spoutSender = new SpoutSender();
+            spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
+        }
+        
+        public unsafe void UpdateTexture() {
 
             int i = 0;
             GetImageFromTime(Shared.frmClock.SecondsToGo, pClockTexture);
@@ -219,7 +243,8 @@ namespace StreamStartingTimer {
         }
 
         public void Dispose() {
-            if (spoutSender != null) { 
+            if (spoutSender != null) {
+                spoutSender.ReleaseSender();
                 spoutSender.Dispose();
                 Marshal.FreeHGlobal(pClockTexture);
             }

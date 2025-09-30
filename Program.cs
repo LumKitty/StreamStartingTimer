@@ -22,8 +22,9 @@ namespace StreamStartingTimer
     public static class Shared {
         public static CSettings CurSettings = new CSettings();
         public static List<TimerEvent> TimerEvents = new();
-        public const string Version = "v0.3";
+        public const string Version = "v0.5";
         public const string TimeFormat = @"mm\:ss";
+        public const string MutexName = "uk.lum.streamstartingtimer";
         public static bool VNyanConnected = false;
         public static bool MixItUpConnected = false;
         
@@ -32,6 +33,7 @@ namespace StreamStartingTimer
         public static HttpClient client = new HttpClient();
         public static ConcurrentDictionary<String, String> miuCommands = new ConcurrentDictionary<string, string>();
         public static Clock frmClock;
+        public static Mutex Mutex;
 
         public static bool InitMIU(string URL) {
             miuCommands.Clear();
@@ -131,6 +133,16 @@ namespace StreamStartingTimer
             [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
             static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
         }
+        public static bool IsSingleInstance() {
+            try {
+                Mutex.OpenExisting(Shared.MutexName);
+            } catch {
+                Shared.Mutex = new Mutex(true, Shared.MutexName);
+                return true;
+            }
+            // More than one instance.
+            return false;
+        }
     }
 
     class Options {
@@ -152,6 +164,10 @@ namespace StreamStartingTimer
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+            while (!Shared.IsSingleInstance()) {
+                MessageBox.Show("Another copy of this program is already running", "Mutex Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             int StartTime = 0;
             string ConfigFile = Application.StartupPath + "DefaultConfig.json";
             string EventsFile = Application.StartupPath + "DefaultEvents.json";
