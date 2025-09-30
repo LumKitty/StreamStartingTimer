@@ -14,7 +14,7 @@ namespace StreamStartingTimer {
     public partial class Clock : Form {
         public int SecondsToGo { get; set; }
         private Binding bndTestTime;
-        //private ClockSpout ImageClock;
+        private ClockSpout ImageClock;
         private Task ImageClockUpdaterTask;
         public bool TimerRunning;
 
@@ -115,8 +115,7 @@ namespace StreamStartingTimer {
         public void StartCountdown(int CountdownTime) {
             if (Shared.CurSettings.SpoutEnabled) {
                 TimerRunning = true;
-                //ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
-                ImageClockUpdaterTask = Task.Run(() => ClockSpout.UpdateTexture());
+                ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
             }
             lblCountdown.DataBindings.Remove(bndTestTime);
             SecondsToGo = CountdownTime;
@@ -125,6 +124,7 @@ namespace StreamStartingTimer {
 
         private void UpdateClock(TimeSpan SecondsToGo) {
             lblCountdown.Text = SecondsToGo.ToString(Shared.TimeFormat);
+            if (Shared.CurSettings.SpoutEnabled) { ImageClock.UpdateTexture(); }
         }
         private void UpdateClock(int SecondsToGo) {
             UpdateClock(TimeSpan.FromSeconds(SecondsToGo));
@@ -177,6 +177,7 @@ namespace StreamStartingTimer {
             if (SecondsToGo <= 0) {
                 TimerRunning = false;
                 timer1.Stop();
+                if (Shared.CurSettings.SpoutEnabled) { ImageClock.Dispose(); }
                 if (QuitWhenDone) {
                     Thread.Sleep(1000);
                     this.Close();
@@ -225,6 +226,7 @@ namespace StreamStartingTimer {
             btnEvents.Enabled = true;
             timer1.Enabled = false;
             TimerRunning = false;
+            if (Shared.CurSettings.SpoutEnabled) { ImageClock.Dispose(); }
             lblNextEvent.Text = DefaultStatusBar;
             lblCountdown.DataBindings.Add(bndTestTime);
         }
@@ -262,7 +264,9 @@ namespace StreamStartingTimer {
         }
 
         private void Clock_FormClosing(object sender, FormClosingEventArgs e) {
-            ClockSpout.Cleanup();
+            ImageClock.Dispose();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }
