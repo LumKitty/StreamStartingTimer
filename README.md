@@ -3,8 +3,9 @@ Allows you to show an accurate countdown at the start of stream, and fire events
 Events can be VNyan websockets, MixItUp commands or external executables  
 * 100% Free and Open Source  
 * No ads, no premium version, no subscription, no monetization of any sort  
-* Lightweight portable executable (around 1MB in size)
+* Lightweight portable executable
 * No registry settings, just config.json files in the exe directory
+* experimental support for image fonts and Spout2 output (see release notes)
 <img width="1145" height="795" alt="image" src="https://github.com/user-attachments/assets/4efce1b9-e3fa-4a8c-adee-e5867b421343" />
 
 ## Quick Start
@@ -25,7 +26,7 @@ Events can be VNyan websockets, MixItUp commands or external executables
 This application is designed to be started from the commandline or launched from a Stream Deck. Commandline options:  
 ```-m xx``` Start a timer for xx minutes  
 ```-s xx``` Add xx seconds to the timer (can be used in conjunction with -m)  
-```-p xx``` Start at xx minutes past the hour (e.g. if the time is 6:42 -p 45 will start the timer at 6:45. -p 0 will start at 7:00)  
+```-p xx``` Start a timer that targets xx minutes past the hour (e.g. if the time is 6:42 -p 45 will start a 3 min timer (finishing at 6:45:00). -p 0 will start an 18 min (finishing at at 7:00:00)  
 ```-c FileName``` Load a different configuration file instead of DefaultConfig.json  
 ```-e Filename``` Load a different events file instead of DefaultEvents.json (see the events section for more details)  
 
