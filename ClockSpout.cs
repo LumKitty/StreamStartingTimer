@@ -28,103 +28,6 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace StreamStartingTimer {
 
-    /*public static class OpenGLHandler {
-        static bool GLInitialised = false;
-        static IntPtr Handle = Process.GetCurrentProcess().MainWindowHandle;
-        static HDC dc;
-        static HGLRC gctx;
-        static Silk.NET.OpenGL.GL gl;
-
-        public static void InitGL() {
-            if (GLInitialised) return;
-            GLInitialised = true;
-            SetOpenglPixelFormat((HWND)Handle);
-            dc = GetDC((HWND)Handle);
-            gctx = wglCreateContext(dc);
-            wglMakeCurrent(dc, gctx);
-            ReleaseDC((HWND)Handle, dc);
-            gl = new Silk.NET.OpenGL.GL(new WindowsGlNativeContext());
-        }
-
-        public static void CloseGL() {
-            if (!GLInitialised) return;
-            gl.Dispose();
-        }
-
-        static unsafe void SetOpenglPixelFormat(HWND window) {
-            // Contains desired pixel format characteristics
-            PIXELFORMATDESCRIPTOR pfd = new();
-
-            // the size of the struct
-            pfd.nSize = (ushort)sizeof(PIXELFORMATDESCRIPTOR);
-
-            // hardcoded version of the struct
-            pfd.nVersion = 1;
-
-            // we will draw to the window, we will draw via opengl, and we will use two buffers to swap between them each frame 
-            pfd.dwFlags = PFD.PFD_DRAW_TO_WINDOW | PFD.PFD_SUPPORT_OPENGL | PFD.PFD_DOUBLEBUFFER;
-
-            // We expect to use RGBA pixels
-            pfd.iPixelType = PFD.PFD_TYPE_RGBA;
-
-            // pixels with 3 * 8 = 24 bits for color 
-            pfd.cColorBits = 24;
-
-            // Depth of z-buffer (we don't actually care about that for now)
-            pfd.cDepthBits = 32;
-
-            HDC hdc = GetDC(window);
-            int iPixelFormat;
-
-            // get the device context's best, available pixel format match  
-            iPixelFormat = ChoosePixelFormat(hdc, &pfd);
-
-            // make that match the device context's current pixel format  
-            SetPixelFormat(hdc, iPixelFormat, &pfd);
-
-            ReleaseDC(window, hdc);
-        }
-        public class WindowsGlNativeContext : INativeContext {
-            private readonly UnmanagedLibrary _l;
-
-            public WindowsGlNativeContext() {
-                _l = new UnmanagedLibrary("opengl32.dll");
-            }
-
-            public void Dispose() {
-                _l.Dispose();
-            }
-
-            public nint GetProcAddress(string proc, int? slot = null) {
-                if (TryGetProcAddress(proc, out var address, slot)) {
-                    return address;
-                }
-
-                throw new InvalidOperationException("No function was found with the name " + proc + ".");
-            }
-
-            public unsafe bool TryGetProcAddress(string proc, out nint addr, int? slot = null) {
-                if (_l.TryLoadFunction(proc, out addr)) {
-                    return true;
-                }
-
-                // + 1 for null terminated string
-                var asciiName = new byte[proc.Length + 1];
-
-                Encoding.ASCII.GetBytes(proc, asciiName);
-
-                fixed (byte* name = asciiName) {
-                    addr = (nint)wglGetProcAddress((sbyte*)name);
-                    if (addr != IntPtr.Zero) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-    }*/
-
     public static class OpenGLHandler {
         static bool GLInitialised = false;
         static OpenTK.GLControl.GLControl GL;
@@ -141,7 +44,7 @@ namespace StreamStartingTimer {
     }
 
     public class ClockSpout : IDisposable {
-        static Bitmap[] ClockFont = new Bitmap[12];
+        static List<Byte[]> ClockFont = new List<Byte[]>();
         static int NumberWidth;
         static int NumberHeight;
         static int ColonWidth;
@@ -150,84 +53,118 @@ namespace StreamStartingTimer {
         static SpoutSender spoutSender;
         static readonly System.Drawing.Imaging.PixelFormat TexturePixelFormat = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
         static nint pClockTexture;
+        static string PrevTime = "xx:xx";
 
-        public void GetImageFromTime(int SecondsToGo, nint pClockTexture) {
-            //byte[] ClockTexture = new byte[ClockArraySize];
+        public unsafe void GetImageFromTime(int SecondsToGo, nint pClockTexture) {
             string CurTime;
             int CurDigit;
             int ColonFix;
-            Int32[] TempLine = new Int32[NumberWidth];
-            UInt32 TempPixel;
             int y;
-            int x;
 
             CurTime = TimeSpan.FromSeconds(SecondsToGo).ToString(Shared.TimeFormat);
 
             ColonFix = 0;
 
             for (int Digit = 0; Digit < 5; Digit++) {
-                if (!Shared.CurSettings.ShowLeadingZero && (Digit == 0) && (CurTime[Digit]=='0')) {
-                    CurDigit = 11;
-                } else if (Digit == 2) {
+                if (Digit == 2) {
                     ColonFix = ColonWidth - NumberWidth;
-                    CurDigit = 10;
-                } else if (CurTime[Digit] == ' ') {
-                    CurDigit = 11;
-                } else {
-                    CurDigit = CurTime[Digit] - 48;
-                    if (CurDigit < 0 && CurDigit > 9) { throw new Exception("Digit is not 0-9 or space"); }
-                }
-
-                if (CurDigit != 10) {
-                    for (y = 0; y < NumberHeight; y++) {
-                        for (x = 0; x < NumberWidth; x++) {
-                            TempPixel = (UInt32)ClockFont[CurDigit].GetPixel(x, y).ToArgb();
-                            TempLine[x] = (Int32)(TempPixel & 0xFF00FF00 | (((TempPixel & 0x00FF0000) >> 16)) | (((TempPixel & 0x000000FF) << 16)));
-                        }
-                        Marshal.Copy(TempLine, 0, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth);
+                } else if (CurTime[Digit] != PrevTime[Digit]) {
+                    if (!Shared.CurSettings.ShowLeadingZero && (Digit == 0) && (CurTime[Digit] == '0')) {
+                        CurDigit = 10;
+                    } else {
+                        CurDigit = CurTime[Digit] - 48;
+                        if (CurDigit < 0 && CurDigit > 9) { throw new Exception("Digit is not 0-9 or space"); }
                     }
-
+                    for (y = 0; y < NumberHeight; y++) {
+                        if (Shared.CurSettings.Debug) {
+                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            Thread.Sleep(5);
+                            Marshal.Copy(ClockFont[10], y * NumberWidth * 4, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth * 4);
+                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            Thread.Sleep(5);
+                        }
+                        Marshal.Copy(ClockFont[CurDigit], y * NumberWidth * 4, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth * 4);
+                    }
                 }
+            }
+            PrevTime = CurTime;
+        }
+
+        private byte[] ConvertImage(Bitmap TempClockFont, string CharName, bool CheckWidth) {
+            if ((CheckWidth && TempClockFont.Width != NumberWidth) || TempClockFont.Height != NumberHeight) {
+                Shared.CurSettings.SpoutEnabled = false;
+                System.Windows.Forms.MessageBox.Show(CharName + ".png is not the same size (" + TempClockFont.Width.ToString() + "x" + TempClockFont.Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            } else {
+                byte[] ReturnImage = new byte[TempClockFont.Width * TempClockFont.Height * 4];
+                int n = 0;
+                Color TempPixel;
+                for (int y = 0; y < TempClockFont.Height; y++) {
+                    for (int x = 0; x < TempClockFont.Width; x++) {
+                        TempPixel = TempClockFont.GetPixel(x, y);
+                        ReturnImage[n] = TempPixel.R;
+                        ReturnImage[n + 1] = TempPixel.G;
+                        ReturnImage[n + 2] = TempPixel.B;
+                        ReturnImage[n + 3] = TempPixel.A;
+                        n += 4;
+                    }
+                }
+                return ReturnImage;
             }
         }
 
-        public ClockSpout(string FontDir) {
-            ClockFont[11] = new Bitmap(FontDir + "\\space.png");
-            NumberWidth = ClockFont[11].Width;
-            NumberHeight = ClockFont[11].Height;
-            for (int n = 0; n < 10; n++) {
-                ClockFont[n] = new Bitmap(FontDir + "\\" + n.ToString() + ".png");
-                if (ClockFont[n].Width != NumberWidth || ClockFont[n].Height != NumberHeight) {
-                    Shared.CurSettings.SpoutEnabled = false;
-                    System.Windows.Forms.MessageBox.Show(n.ToString() + ".png is not the same size (" + ClockFont[n].Width.ToString() + "x" + ClockFont[n].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        public unsafe ClockSpout(string FontDir) {
+            int n;
+            Bitmap TempClockFont;
+            string MissingFiles = "";
+            for (n = 0; n < 10; n++) {
+                if (!File.Exists(FontDir + "\\" + n.ToString() + ".png")) {
+                    MissingFiles += n.ToString() + ".png, ";
                 }
             }
-            ClockFont[10] = new Bitmap(FontDir + "\\colon.png");
-            ColonWidth = ClockFont[10].Width;
-            if (ClockFont[10].Height != NumberHeight) {
-                Shared.CurSettings.SpoutEnabled = false;
-                System.Windows.Forms.MessageBox.Show("colon.png is not the same height (" + ClockFont[10].Width.ToString() + "x" + ClockFont[10].Height.ToString() + "px vs " + NumberWidth.ToString() + "x" + NumberHeight.ToString() + ")", "Image size mismatch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (!File.Exists(FontDir + "\\colon.png")) {
+                MissingFiles += "colon.png, ";
             }
+            if (MissingFiles != "") {
+                MessageBox.Show("Some or all of the clock font images are missing\n" + MissingFiles + "\nDisabling Spout2 output", "Files Missing", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Shared.CurSettings.SpoutEnabled = false;
+                return;
+            }
+            TempClockFont = new Bitmap(FontDir + "\\0.png");
+            NumberWidth = TempClockFont.Width;
+            NumberHeight = TempClockFont.Height;
+            ClockFont.Add(ConvertImage(TempClockFont, "0", false));
+            for (n = 1; n < 10; n++) {
+                TempClockFont = new Bitmap(FontDir + "\\" + n.ToString() + ".png");
+                ClockFont.Add(ConvertImage(TempClockFont, n.ToString(), true));
+            }
+            if (File.Exists(FontDir + "\\" + "space.png")) { 
+                TempClockFont = new Bitmap(FontDir + "\\" + "space.png");
+                ClockFont.Add(ConvertImage(TempClockFont, "space", true));
+            } else {
+                ClockFont.Add(new byte[NumberWidth * NumberHeight * 4]);
+            }
+            TempClockFont = new Bitmap(FontDir + "\\colon.png");
+            ColonWidth = TempClockFont.Width;
             ClockWidth = NumberWidth * 4 + ColonWidth;
-            ClockArraySize = (ClockWidth * NumberHeight) * 4;
+            ClockArraySize = (ClockWidth * NumberHeight) * 8;
 
             pClockTexture = Marshal.AllocHGlobal(ClockArraySize);
-            Int32[] TempLine = new Int32[ColonWidth];
-            UInt32 TempPixel;
-
-            // Add the : to the clock texture now. It never needs copying again
-            for (int y = 0; y < NumberHeight; y++) {
-                for (int x = 0; x < ColonWidth; x++) {
-                    TempPixel = (UInt32)ClockFont[10].GetPixel(x, y).ToArgb();
-                    TempPixel = TempPixel & 0xFF00FF00 | (((TempPixel & 0x00FF0000) >> 16)) | (((TempPixel & 0x000000FF) << 16));
-                    TempLine[x] = (Int32)TempPixel;
-                }
-                Marshal.Copy(TempLine, 0, pClockTexture + (y * ClockWidth * 4) + (((2 * NumberWidth)) * 4), ColonWidth);
-            }
+            Byte[] Colon = new byte[ClockArraySize];
+            Colon = ConvertImage(TempClockFont, "colon", false);
 
             OpenGLHandler.InitGL();
             spoutSender = new SpoutSender();
             spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
+
+            // Add the : to the clock texture now. It never needs copying again
+            for (int y = 0; y < NumberHeight; y++) {
+                spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                Marshal.Copy(Colon, y*ColonWidth*4, pClockTexture + (y * ClockWidth * 4) + (((2 * NumberWidth)) * 4), ColonWidth*4);
+            }
+
         }
         
         public unsafe void UpdateTexture() {
@@ -237,7 +174,6 @@ namespace StreamStartingTimer {
             Console.WriteLine($"Sending (i = {i})");
             spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
             spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-            Thread.Sleep(10); // Delay
             if (i < 2) i++;
             else i = 0;
         }
@@ -247,6 +183,7 @@ namespace StreamStartingTimer {
                 spoutSender.ReleaseSender();
                 spoutSender.Dispose();
                 Marshal.FreeHGlobal(pClockTexture);
+                PrevTime = "xx:xx";
             }
         }
     }

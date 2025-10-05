@@ -89,6 +89,9 @@ namespace StreamStartingTimer {
         [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("Folder with a series of images named 0.png - 9.png, colon.png and space.png. All must be the same height and width (colon.png may have a different width). Once the timer has been started the application must be restarted to change this")]
         public virtual string FontDir { get; set; }
 
+        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("Show memory writes in real-time (this setting is not saved)")]
+        public virtual bool Debug { get; set; }
+
         private void Init() {
             Font = Defaults.Font;
             BGCol = Defaults.BGCol;
@@ -104,6 +107,7 @@ namespace StreamStartingTimer {
             SpoutEnabled = Defaults.SpoutEnabled;
             SpoutName = Defaults.SpoutName;
             FontDir = Defaults.FontDir;
+            Debug = false;
         }
         
         public Settings() {
