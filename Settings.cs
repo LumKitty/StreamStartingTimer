@@ -92,7 +92,7 @@ namespace StreamStartingTimer {
         [DisplayName("Spout2 sender name")]
         public virtual string SpoutName { get; set; }
 
-        [CategoryAttribute("Spout Image Font)"), DescriptionAttribute("Folder with a series of images named 0.png - 9.png, colon.png and space.png. All must be the same height and width (colon.png may have a different width). Once the timer has been started the application must be restarted to change this")]
+        [CategoryAttribute("Spout Image Font"), DescriptionAttribute("Folder with a series of images named 0.png - 9.png, colon.png and space.png. All must be the same height and width (colon.png may have a different width). Once the timer has been started the application must be restarted to change this")]
         [DisplayName("Font directory")]
         public virtual string FontDir { get; set; }
 

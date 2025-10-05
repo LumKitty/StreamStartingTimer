@@ -22,7 +22,7 @@ namespace StreamStartingTimer
     public static class Shared {
         public static CSettings CurSettings = new CSettings();
         public static List<TimerEvent> TimerEvents = new();
-        public const string Version = "v0.6";
+        public const string Version = "v0.7";
         public const string TimeFormat = @"mm\:ss";
         public const string MutexName = "uk.lum.streamstartingtimer";
         
