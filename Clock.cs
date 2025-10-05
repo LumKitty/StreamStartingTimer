@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.AccessControl;
 using WatsonWebsocket;
+using Microsoft.WindowsAPICodePack.Taskbar;
 
 namespace StreamStartingTimer {
     public partial class Clock : Form {
@@ -32,7 +33,14 @@ namespace StreamStartingTimer {
 
         public Clock(int StartTime, string EventsFile) {
             InitializeComponent();
+
             SecondsToGo = 0;
+
+            lblVNyan.DataBindings.Add("BackColor", Shared.VNyanConnector, "StatusColor");
+            lblVNyan.DataBindings.Add("Enabled", Shared.VNyanConnector, "Enabled");
+            lblMixItUp.DataBindings.Add("BackColor", Shared.MIUConnector, "StatusColor");
+            lblMixItUp.DataBindings.Add("Enabled", Shared.MIUConnector, "Enabled");
+
             lblCountdown.DataBindings.Add("BackColor", Shared.CurSettings, "BGCol");
             lblCountdown.DataBindings.Add("ForeColor", Shared.CurSettings, "FGCol");
             lblCountdown.DataBindings.Add("Font", Shared.CurSettings, "Font");
@@ -54,62 +62,12 @@ namespace StreamStartingTimer {
 
         private bool QuitWhenDone = false;
 
-        void VNyanConnected(object sender, EventArgs args) {
-            lblVNyan.BackColor = Color.Green;
-            Shared.VNyanConnected = true;
-        }
-        void VNyanDisconnected(object sender, EventArgs args) {
-            lblVNyan.BackColor = Color.Red;
-            Shared.VNyanConnected = false;
-        }
-
-        private async Task ConnectVNyan() {
-            int n = 0;
-            lblVNyan.Enabled = true;
-            lblVNyan.BackColor = Color.Goldenrod;
-            do {
-                Shared.wsClient = new WatsonWsClient(new Uri(Shared.CurSettings.VNyanURL));
-                Shared.wsClient.KeepAliveInterval = 1000;
-                Shared.wsClient.ServerConnected += VNyanConnected;
-                Shared.wsClient.ServerDisconnected += VNyanDisconnected;
-                Shared.wsClient.Start();
-                while (!Shared.VNyanConnected && n < 50) {
-                    Thread.Sleep(100);
-                    n++;
-                }
-                if (!Shared.VNyanConnected) {
-                    lblVNyan.BackColor = Color.Red;
-                }
-            } while (!Shared.VNyanConnected);
-        }
-        private async Task ConnectMixItUp() {
-            lblMixItUp.Enabled = true;
-            lblMixItUp.BackColor = Color.Goldenrod;
-            do {
-                if (Shared.InitMIU(Shared.CurSettings.MixItUpURL)) {
-                    lblMixItUp.BackColor = Color.Green;
-                    Shared.MixItUpConnected = true;
-                    //UpdateMiuTimerEvents(ref TimerEvents);
-                } else {
-                    lblMixItUp.BackColor = Color.Red;
-                    Shared.MixItUpConnected = false;
-                }
-            } while (!Shared.MixItUpConnected);
-        }
-
         private void Connect() {
             if (Shared.CurSettings.VNyanURL.Length > 0) {
-                Task.Run(() => ConnectVNyan());
-            } else {
-                lblVNyan.BackColor = SystemColors.Control;
-                lblVNyan.Enabled = false;
-                Shared.VNyanConnected = false;
+                Shared.VNyanConnector.Connect();
             }
             if (Shared.CurSettings.MixItUpURL.Length > 0) {
-                Task.Run(() => ConnectMixItUp());
-            } else {
-                lblMixItUp.BackColor = SystemColors.Control;
-                lblMixItUp.Enabled = false;
+                Shared.MIUConnector.Connect();
             }
         }
 
@@ -151,39 +109,48 @@ namespace StreamStartingTimer {
             UpdateClock(SecondsToGo);
 
             n = toolStripProgressBar1.Maximum - SecondsToGo;
-            if (n < 0) {
-                toolStripProgressBar1.Value = 0;
+            if (n < 0) { n = 0; }
+            toolStripProgressBar1.Value = n;
+
+            TaskbarManager.Instance.SetProgressValue(n, toolStripProgressBar1.Maximum);
+            if (SecondsToGo <= Shared.CurSettings.ProgressYellow) {
+                if (SecondsToGo <= Shared.CurSettings.ProgressRed) {
+                    TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Error);
+                } else {
+                    TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
+                }
             } else {
-                toolStripProgressBar1.Value = n;
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
             }
-            for (n = 0; n < Shared.TimerEvents.Count; n++) {
-                if (Shared.TimerEvents[n].Enabled) {
-                    if ((Shared.TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
-                        StatusLabel = "Next Event in " + (SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
-                        i = n + 1;
-                        while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.TimerEvents[n].Time.TotalSeconds) {
-                            if (!Shared.TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
-                            i++;
-                        }
-                        if (ExtraSimultaneousEvents > 0) {
-                            StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
-                        }
-                        break;
-                    } else if ((Shared.TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
-                        i = n;
-                        StatusLabel = "Firing event:";
-                        while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
-                            if (!Shared.TimerEvents[i].HasFired) {
-                                StatusLabel += " (" + Shared.TimerEvents[i].EventType + ") " + Shared.TimerEvents[i].Payload;
-                                if (!Shared.TimerEvents[i].Refire) { Shared.TimerEvents[i].HasFired = true; }
-                                Shared.TimerEvents[i].Fire();
+
+                for (n = 0; n < Shared.TimerEvents.Count; n++) {
+                    if (Shared.TimerEvents[n].Enabled) {
+                        if ((Shared.TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                            StatusLabel = "Next Event in " + (SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
+                            i = n + 1;
+                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.TimerEvents[n].Time.TotalSeconds) {
+                                if (!Shared.TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
+                                i++;
                             }
-                            i++;
+                            if (ExtraSimultaneousEvents > 0) {
+                                StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
+                            }
+                            break;
+                        } else if ((Shared.TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                            i = n;
+                            StatusLabel = "Firing event:";
+                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
+                                if (!Shared.TimerEvents[i].HasFired) {
+                                    StatusLabel += " (" + Shared.TimerEvents[i].EventType + ") " + Shared.TimerEvents[i].Payload;
+                                    if (!Shared.TimerEvents[i].Refire) { Shared.TimerEvents[i].HasFired = true; }
+                                    Shared.TimerEvents[i].Fire();
+                                }
+                                i++;
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
-            }
             lblNextEvent.Text = StatusLabel;
             if (SecondsToGo <= 0) {
                 TimerRunning = false;
@@ -226,6 +193,11 @@ namespace StreamStartingTimer {
 
         private void btnPause_Click(object sender, EventArgs e) {
             timer1.Enabled = !timer1.Enabled;
+            if (timer1.Enabled) {
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+            } else {
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Indeterminate);
+            }
         }
 
         private void btnReset_Click(object sender, EventArgs e) {
@@ -240,6 +212,7 @@ namespace StreamStartingTimer {
             if (Shared.CurSettings.SpoutEnabled) { ImageClock.Dispose(); }
             lblNextEvent.Text = DefaultStatusBar;
             lblCountdown.DataBindings.Add(bndTestTime);
+            TaskbarManager.Instance.SetProgressState(Microsoft.WindowsAPICodePack.Taskbar.TaskbarProgressBarState.NoProgress);
         }
 
         private void btnAdd30s_Click(object sender, EventArgs e) {
@@ -256,6 +229,7 @@ namespace StreamStartingTimer {
             if (SecondsToGo > 0) {
                 StartTimer(SecondsToGo);
             }
+            TaskbarManager.Instance.SetProgressState(Microsoft.WindowsAPICodePack.Taskbar.TaskbarProgressBarState.NoProgress);
         }
 
         private void btnConfig_Click(object sender, EventArgs e) {

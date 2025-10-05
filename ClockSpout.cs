@@ -182,6 +182,7 @@ namespace StreamStartingTimer {
             if (spoutSender != null) {
                 spoutSender.ReleaseSender();
                 spoutSender.Dispose();
+                spoutSender = null;
                 Marshal.FreeHGlobal(pClockTexture);
                 PrevTime = "xx:xx";
             }

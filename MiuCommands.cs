@@ -17,7 +17,7 @@ namespace StreamStartingTimer {
         private void UpdateListView() {
             listView1.BeginUpdate();
             listView1.Items.Clear();
-            foreach (var MiuCmd in Shared.miuCommands) {
+            foreach (var MiuCmd in Shared.MIUConnector.GetMiuCommands()) {
 
                 ListViewItem item = new ListViewItem(MiuCmd.Key);
                 //item.SubItems.Add(timerEvent.Columns[0]);

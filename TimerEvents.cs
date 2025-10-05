@@ -80,7 +80,7 @@ namespace StreamStartingTimer {
         public override string Payload { get; set; }
 
         protected override async void _Fire() {
-            Shared.wsClient.SendAsync(Payload, WebSocketMessageType.Text, Shared.CT);
+            Shared.VNyanConnector.Send(Payload);
         }
         public VNyanEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload) {
             Enabled = _Enabled;
@@ -125,46 +125,12 @@ namespace StreamStartingTimer {
         public MIUPlatforms Platform { get; set; }
 
         protected override async void _Fire() {
-            string MiuCmdID = GetMiuCmdId();
-            if (MiuCmdID != "") {
-                string Content = "{ \"Platform\": \"" + Platform + "\", \"Arguments\": \"" + Arguments + "\" }";
-                var jsonData = new StringContent(Content, Encoding.ASCII);
-                jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                string Response = "";
-                int httpStatus = 0;
-                var PostResult = await Shared.client.PostAsync(Shared.CurSettings.MixItUpURL + "/commands/" + MiuCmdID, jsonData);
-                Response = PostResult.Content.ReadAsStringAsync().Result;
-                httpStatus = ((int)PostResult.StatusCode);
-                Console.WriteLine(PostResult.ToString());
-                PostResult.Dispose();
-            } else {
-                Shared.AutoClosingMessageBox.Show(MiuCmdID, "Can't fire " + Payload, 10000);
-            }
-        }
-
-        private string GetMiuCmdId() {
-            if (Shared.miuCommands.ContainsKey(Payload)) {
-                return Shared.miuCommands[Payload];
-            } else {
-                Shared.AutoClosingMessageBox.Show("command not found: " + Payload, "MixItUpError", 10000);
-                return "";
-            }
+            Shared.MIUConnector.Send(Payload, Platform.ToString(), Arguments);
         }
 
         public override void TestFire() {
-            if (GetMiuCmdId() == "") { Shared.InitMIU(Shared.CurSettings.MixItUpURL); }
             Task.Run(() => _Fire());
         }
-
-        /*public void UpdateMiuCmdId() {
-            if (MiuCmdID == "") {
-                if (Shared.miuCommands.ContainsKey(Payload)) {
-                    MiuCmdID = Shared.miuCommands[Payload];
-                } else {
-                    Shared.AutoClosingMessageBox.Show("command not found: " + Payload, "MixItUpError", 10000); return;
-                }
-            }
-        }*/
 
         public MIUEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload, string _Arguments, MIUPlatforms _Platform) {
             Enabled = _Enabled;
@@ -189,7 +155,7 @@ namespace StreamStartingTimer {
             SetPayload(JSON);
             try { Arguments = JSON.Arguments.ToString(); } catch { Arguments = ""; }
             try {
-                Shared.GetMiuPlatform(JSON.Platform.ToString(), Shared.CurSettings.MixItUpPlatform);
+                Platform = Shared.MIUConnector.GetMiuPlatform(JSON.Platform.ToString(), Shared.CurSettings.MixItUpPlatform);
             } catch { Platform = Shared.CurSettings.MixItUpPlatform; }
 
         }

@@ -28,13 +28,9 @@ namespace StreamStartingTimer {
         public const bool SpoutEnabled = false;
         public const string SpoutName = "StreamStartingTimer";
         public static readonly string FontDir = Application.StartupPath + "\\DefaultFont";
+        public const int ProgressYellow = 60;
+        public const int ProgressRed = 30;
         //public static readonly string FontDir = "D:\\Twitch\\Software\\StreamStartingTimer\\DefaultFont";
-    }
-
-    public enum MIUPlatforms {
-        Twitch = 0,
-        YouTube = 1,
-        Trovo = 2
     }
 
     public class Settings {
@@ -54,9 +50,17 @@ namespace StreamStartingTimer {
         [DisplayName("Text alignment")]
         public virtual ContentAlignment Alignment { get; set; }
 
-        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Display 04:20 or   4:20")]
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Display 04:20 or   4:20 (does not take effect until restarting the timer)")]
         [DisplayName("Show Leading Zero")]
         public virtual bool ShowLeadingZero { get; set; }
+
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Progress bar changes to yellow when this many seconds are left")]
+        [DisplayName("Progress bar yellow time")]
+        public virtual int ProgressYellow { get; set; }
+
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Progress bar changes to red when this many seconds are left")]
+        [DisplayName("Progress bar red time")]
+        public virtual int ProgressRed { get; set; }
 
         [Browsable(false)]
         public virtual Point Location { get; set; }
@@ -80,16 +84,19 @@ namespace StreamStartingTimer {
         [DisplayName("MixItUp URL")]
         public virtual string MixItUpURL { get; set; }
 
-        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("")]
+        [CategoryAttribute("Spout Image Font"), DescriptionAttribute("Enable output of image fonts via Spout2. Requires obs-spout to capture this")]
+        [DisplayName("Enable Spout2 output")]
         public virtual bool SpoutEnabled { get; set; }
 
-        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("")]
+        [CategoryAttribute("Spout Image Font"), DescriptionAttribute("Will be show in in OBS Spout2 source selector")]
+        [DisplayName("Spout2 sender name")]
         public virtual string SpoutName { get; set; }
 
-        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("Folder with a series of images named 0.png - 9.png, colon.png and space.png. All must be the same height and width (colon.png may have a different width). Once the timer has been started the application must be restarted to change this")]
+        [CategoryAttribute("Spout Image Font)"), DescriptionAttribute("Folder with a series of images named 0.png - 9.png, colon.png and space.png. All must be the same height and width (colon.png may have a different width). Once the timer has been started the application must be restarted to change this")]
+        [DisplayName("Font directory")]
         public virtual string FontDir { get; set; }
 
-        [CategoryAttribute("Spout Image Font (Experimental)"), DescriptionAttribute("Show memory writes in real-time (this setting is not saved)")]
+        [CategoryAttribute("Spout Image Font"), DescriptionAttribute("Show memory writes in real-time (this setting is not saved)")]
         public virtual bool Debug { get; set; }
 
         private void Init() {
@@ -107,6 +114,8 @@ namespace StreamStartingTimer {
             SpoutEnabled = Defaults.SpoutEnabled;
             SpoutName = Defaults.SpoutName;
             FontDir = Defaults.FontDir;
+            ProgressYellow = Defaults.ProgressYellow;
+            ProgressRed = Defaults.ProgressRed;
             Debug = false;
         }
         
@@ -136,6 +145,8 @@ namespace StreamStartingTimer {
                 try { SpoutEnabled = Config.SpoutEnabled; } catch { }
                 try { SpoutName = Config.SpoutName; } catch { }
                 try { FontDir = Config.FontDir; } catch { }
+                try { ProgressYellow = Config.ProgressYellow; } catch { }
+                try { ProgressRed = Config.ProgressRed; } catch { }
             } 
         }
 
@@ -158,7 +169,9 @@ namespace StreamStartingTimer {
                 new JProperty("TestTime", (int)TestTime.TotalSeconds),
                 new JProperty("SpoutEnabled", SpoutEnabled),
                 new JProperty("SpoutName", SpoutName),
-                new JProperty("FontDir", FontDir)
+                new JProperty("FontDir", FontDir),
+                new JProperty("ProgressYellow", ProgressYellow),
+                new JProperty("ProgressRed", ProgressRed)
             );
             File.WriteAllText(ConfigFile, Config.ToString());
         }

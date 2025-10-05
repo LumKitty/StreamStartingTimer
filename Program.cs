@@ -25,54 +25,12 @@ namespace StreamStartingTimer
         public const string Version = "v0.6";
         public const string TimeFormat = @"mm\:ss";
         public const string MutexName = "uk.lum.streamstartingtimer";
-        public static bool VNyanConnected = false;
-        public static bool MixItUpConnected = false;
         
-        public static WatsonWsClient wsClient;
-        public static CancellationToken CT = new System.Threading.CancellationToken();
-        public static HttpClient client = new HttpClient();
-        public static ConcurrentDictionary<String, String> miuCommands = new ConcurrentDictionary<string, string>();
         public static Clock frmClock;
         public static Mutex Mutex;
 
-        public static bool InitMIU(string URL) {
-            miuCommands.Clear();
-            CurSettings.MixItUpURL = URL;
-            var GetResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
-            int skip = 0;
-            int count = 0;
-            do {
-                try {
-                    GetResult = client.GetAsync(CurSettings.MixItUpURL + "/commands?pagesize=10&skip=" + skip.ToString()).GetAwaiter().GetResult();
-                } catch (Exception e) {
-                    return false;
-                }
-                string Response = GetResult.Content.ReadAsStringAsync().Result;
-
-                dynamic Results = JsonConvert.DeserializeObject<dynamic>(Response);
-                count = Results.Commands.Count;
-                // Console.WriteLine("Count: " + count.ToString());
-                foreach (dynamic Result in Results.Commands) {
-                    // Console.WriteLine(Result.ToString());
-                    // Console.WriteLine(Result.Name + " : " + Result.ID);
-                    // If this command already exists, then we're fine, so can ignore the fail
-                    miuCommands.TryAdd(Result.Name.ToString().Trim().ToLower(), Result.ID.ToString());
-                    // Console.WriteLine("Added");
-                }
-                GetResult.Dispose();
-                skip += 10;
-            } while (count >= 10);
-            return (miuCommands.Count > 0);
-        }
-
-        public static MIUPlatforms GetMiuPlatform(string Platform, MIUPlatforms Default) {
-            switch (Platform.ToLower()) {
-                case "twitch":  return MIUPlatforms.Twitch;
-                case "youtube": return MIUPlatforms.YouTube;
-                case "trovo":   return MIUPlatforms.Trovo;
-                default:        return Default;
-            }
-        }
+        public static VNyanConnector VNyanConnector = new VNyanConnector();
+        public static MIUConnector MIUConnector = new MIUConnector();
 
         public static List<TimerEvent> LoadEvents(string filename) {
             int FileVersion = 0;
