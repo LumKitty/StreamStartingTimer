@@ -225,7 +225,7 @@ namespace StreamStartingTimer {
 
         private void Clock_Shown(object sender, EventArgs e) {
             Connect();
-            OpenGLHandler.InitGL();
+            //OpenGLHandler.InitGL();
             if (SecondsToGo > 0) {
                 StartTimer(SecondsToGo);
             }
@@ -254,7 +254,7 @@ namespace StreamStartingTimer {
 
         private void Clock_FormClosing(object sender, FormClosingEventArgs e) {
             if (ImageClock != null) { ImageClock.Dispose(); }
-            OpenGLHandler.CloseGL();
+            //OpenGLHandler.CloseGL();
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }

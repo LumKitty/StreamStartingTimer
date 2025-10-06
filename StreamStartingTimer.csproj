@@ -13,7 +13,6 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="OpenTK.GLControl" Version="4.0.2" />
     <PackageReference Include="Spout.NETCore" Version="2.7.15" />
     <PackageReference Include="WatsonWebsocket" Version="4.1.5" />
     <PackageReference Include="WindowsAPICodePack-ShellExtensions" Version="1.1.1" />

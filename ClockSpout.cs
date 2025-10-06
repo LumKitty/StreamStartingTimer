@@ -29,7 +29,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 namespace StreamStartingTimer {
 
     public static class OpenGLHandler {
-        static bool GLInitialised = false;
+        /* static bool GLInitialised = false;
         static OpenTK.GLControl.GLControl GL;
         public static void InitGL() {
             if (GLInitialised) { return; }
@@ -40,7 +40,7 @@ namespace StreamStartingTimer {
         public static void CloseGL() {
             if (!GLInitialised) { return; }
             GL.Dispose();
-        }
+        }*/
     }
 
     public class ClockSpout : IDisposable {
@@ -149,13 +149,13 @@ namespace StreamStartingTimer {
             TempClockFont = new Bitmap(FontDir + "\\colon.png");
             ColonWidth = TempClockFont.Width;
             ClockWidth = NumberWidth * 4 + ColonWidth;
-            ClockArraySize = (ClockWidth * NumberHeight) * 8;
+            ClockArraySize = (ClockWidth * NumberHeight) * 4;
 
             pClockTexture = Marshal.AllocHGlobal(ClockArraySize);
             Byte[] Colon = new byte[ClockArraySize];
             Colon = ConvertImage(TempClockFont, "colon", false);
 
-            OpenGLHandler.InitGL();
+            //OpenGLHandler.InitGL();
             spoutSender = new SpoutSender();
             spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
 
