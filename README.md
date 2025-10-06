@@ -1,11 +1,11 @@
 # Stream Starting countdown timer
 Allows you to show an accurate countdown at the start of stream, and fire events at specified times.  
 Events can be VNyan websockets, MixItUp commands or external executables  
+* Support for image fonts and Spout2 output
 * 100% Free and Open Source  
 * No ads, no premium version, no subscription, no monetization of any sort  
 * Lightweight portable executable
 * No registry settings, just config.json files in the exe directory
-* Support for image fonts and Spout2 output
 <img width="874" height="455" alt="image" src="https://github.com/user-attachments/assets/034b483b-61ff-4c9b-a49a-f72c68ad6dea" /> 
 
 ## Quick Start
