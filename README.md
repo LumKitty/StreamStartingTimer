@@ -19,8 +19,11 @@ Events can be VNyan websockets, MixItUp commands or external executables
    - Capture Cursor: Disabled
 8. Add a Chroma key filter to the capture, leave it on the default greenscreen
 9. Click the Config button and set your desired font and size
-10. Close the application
-11. Run StreamStartingTimer.exe -m 5 for a five minute countdown
+10. If you do not use either VNyan or MixItUp, blank out the "VNyan URL" or "MixItUp URL" settings, which will disable connection to these apps
+11. Close the application
+12. Run StreamStartingTimer.exe -m 5 for a five minute countdown
+
+<img width="490" height="493" alt="image" src="https://github.com/user-attachments/assets/c46e796b-46bb-4ed6-8952-b148c14294ae" />
 
 ## Usage
 This application is designed to be started from the commandline or launched from a Stream Deck.  
@@ -52,6 +55,8 @@ If the application was started with ```-m```, ```-s``` or ```-p``` it will autom
 An example font is included on the release page (DemoFont.zip) but ideally you should create your own that matches your personal aesthetic
 
 ## Events
+<img width="785" height="336" alt="image" src="https://github.com/user-attachments/assets/9ddb4107-d371-4d79-b012-9fcf57742f56" />
+
 Clicking "Edit Events" will take you to the event editor. This allows you to automate e.g. running Twitch ads before you go live  
 There are three types of event: VNyan, MixItUp and EXE. They all have the same properties:  
 ```Enabled``` This event will actually fire  
