@@ -5,8 +5,8 @@ Events can be VNyan websockets, MixItUp commands or external executables
 * No ads, no premium version, no subscription, no monetization of any sort  
 * Lightweight portable executable
 * No registry settings, just config.json files in the exe directory
-* experimental support for image fonts and Spout2 output (see release notes)
-<img width="1145" height="795" alt="image" src="https://github.com/user-attachments/assets/4efce1b9-e3fa-4a8c-adee-e5867b421343" />
+* Support for image fonts and Spout2 output
+<img width="874" height="455" alt="image" src="https://github.com/user-attachments/assets/034b483b-61ff-4c9b-a49a-f72c68ad6dea" /> 
 
 ## Quick Start
 1. Requires [.net 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). This should already be installed on most modern versions of Windows
@@ -41,11 +41,15 @@ If the application was started with ```-m```, ```-s``` or ```-p``` it will autom
 3. Click "Choose File" and point to StreamStartingTimer.exe
 4. Add commandline arguments as described above
 
-## Configuration
-The clock font can be customised to match your overall aesthetic. Click the "Config" text to choose your font, change the colour etc.  
-If your preferred clock colour is green, change the Background colour to a different colour hex code and adjust your OBS chroma key filter to match  
-The "Align" setting must match what you have set in your OBS transform. This will allow you to resize the window without the clock being repositioned in your scene  
-For automating tasks at specific times, click Edit Events to open the event editor
+## Image Font (Spout2) Configuration
+1. The best way to use this timer is with an "Image Font". Create a folder named "DefaultFont", and place 11 PNG files, named 0.png, 1.png .. 9.png and colon.png.
+2. Every PNG must be the exact same width and height, with the exception of colon.png which can be a different width.
+3. Click the config button and enable spout2 output. If necessary change the Font Dir setting to point to the folder with your PNGs in it
+4. If you aren't already using it, install the [OBS-Spout plugin](https://github.com/Off-World-Live/obs-spout2-plugin)
+5. Start the timer
+6. Add a new Spout2 capture source in OBS, ensure that the Spout Sender is set to "StreamStartingTimer"
+
+An example font is included on the release page (DemoFont.zip) but ideally you should create your own that matches your personal aesthetic
 
 ## Events
 Clicking "Edit Events" will take you to the event editor. This allows you to automate e.g. running Twitch ads before you go live  
