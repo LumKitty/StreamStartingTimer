@@ -22,18 +22,18 @@ namespace StreamStartingTimer {
 
         public static VNyanConnector VNyanConnector = new VNyanConnector();
         public static MIUConnector MIUConnector = new MIUConnector();
-        public static uint SecondsToGo {
+        public static int SecondsToGo {
             get {
-                uint temp = 0;
+                int temp = 0;
                 if (mmfAccess == null) {
                     InitialiseMMF();
                 }
-                mmfAccess.Read<uint>(0, out temp);
+                mmfAccess.Read<int>(0, out temp);
                 return temp;
             }
             set {
                 if (mmfAccess == null) { InitialiseMMF(); }
-                mmfAccess.Write<uint>(0, ref value);
+                mmfAccess.Write<int>(0, ref value);
             }
         }
 
@@ -47,8 +47,8 @@ namespace StreamStartingTimer {
             }
             mmfAccess = mmf.CreateViewAccessor(0, MMFSize);
             if (Created) {
-                uint value = 0;
-                mmfAccess.Write<uint>(0, ref value);
+                int value = 0;
+                mmfAccess.Write<int>(0, ref value);
             }
         }
 

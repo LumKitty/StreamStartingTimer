@@ -19,7 +19,7 @@ namespace StreamStartingTimer {
             cevent.Value = TimeText;
         }
 
-        public Clock(uint StartTime, string EventsFile) {
+        public Clock(int StartTime, string EventsFile) {
             InitializeComponent();
 
             Shared.SecondsToGo = 0;
@@ -65,7 +65,7 @@ namespace StreamStartingTimer {
             this.Size = Shared.CurSettings.Dimensions;
         }
 
-        public void StartCountdown(uint CountdownTime) {
+        public void StartCountdown(int CountdownTime) {
             if (Shared.CurSettings.SpoutEnabled) {
                 TimerRunning = true;
                 ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
@@ -83,7 +83,7 @@ namespace StreamStartingTimer {
             lblCountdown.Text = TimeText;
             if (Shared.CurSettings.SpoutEnabled) { ImageClock.UpdateTexture(); }
         }
-        private void UpdateClock(uint SecondsToGo) {
+        private void UpdateClock(int SecondsToGo) {
             UpdateClock(TimeSpan.FromSeconds(SecondsToGo));
         }
 
@@ -164,7 +164,7 @@ namespace StreamStartingTimer {
             }
         }
 
-        private void StartTimer(uint Seconds) {
+        private void StartTimer(int Seconds) {
             StartCountdown(Seconds);
             UpdateClock(Seconds);
             btnStart.Enabled = false;
@@ -180,7 +180,7 @@ namespace StreamStartingTimer {
             }
         }
         private void btnStart_Click(object sender, EventArgs e) {
-            StartTimer((uint)Shared.CurSettings.TestTime.TotalSeconds);
+            StartTimer((int)Shared.CurSettings.TestTime.TotalSeconds);
         }
 
         private void btnPause_Click(object sender, EventArgs e) {

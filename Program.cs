@@ -36,7 +36,7 @@ namespace StreamStartingTimer
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
-            uint StartTime = 0;
+            int StartTime = 0;
             bool AdjustingTime = false;
             string ConfigFile = Application.StartupPath + "DefaultConfig.json";
             string EventsFile = Application.StartupPath + "DefaultEvents.json";
@@ -44,7 +44,7 @@ namespace StreamStartingTimer
                 .WithParsed<Options>(o => {
                     if (o.Alter ) {
                         Console.WriteLine("edit");
-                        StartTime = Shared.SecondsToGo;
+                        StartTime = (int)Shared.SecondsToGo;
                         Console.WriteLine("Clock is currently at " + StartTime.ToString() + " seconds");
                         AdjustingTime = true;
                     } else {
@@ -64,13 +64,21 @@ namespace StreamStartingTimer
                         if (trgTime < dateTime) {
                             trgTime = trgTime.AddHours(1);
                         }
-                        StartTime = (uint)(trgTime - DateTime.Now).TotalSeconds;
+                        StartTime = (int)(trgTime - DateTime.Now).TotalSeconds;
                     }
                     if (o.Seconds != null) {
-                        StartTime += (uint)o.Seconds;
+                        if (AdjustingTime || o.Seconds >= 0) {
+                            StartTime += (int)o.Seconds;
+                        } else {
+                            MessageBox.Show("Seconds cannot be negative, unless -a is used");
+                        }
                     }
                     if (o.Minutes != null) {
-                        StartTime += (uint)o.Minutes * 60;
+                        if (AdjustingTime || o.Minutes >= 0) {
+                            StartTime += (int)o.Minutes * 60;
+                        } else {
+                            MessageBox.Show("Minutes cannot be negative, unless -a is used");
+                        }
                     }
                 }
             );

@@ -15,7 +15,7 @@ namespace StreamStartingTimer {
         static nint pClockTexture;
         static string PrevTime = "xx:xx";
 
-        public void GetImageFromTime(uint SecondsToGo, nint pClockTexture) {
+        public void GetImageFromTime(int SecondsToGo, nint pClockTexture) {
             string CurTime;
             int CurDigit;
             int ColonFix;
