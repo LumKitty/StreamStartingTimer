@@ -1,30 +1,5 @@
-﻿//using Silk.NET.Core.Contexts;
-//using Silk.NET.Core.Loader;
-//using TerraFX.Interop.Windows;
-//using static TerraFX.Interop.Windows.Windows;
-using Spout.Interop;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Drawing.Text;
-using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
+﻿using Spout.Interop;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-
-
-
 
 namespace StreamStartingTimer {
 

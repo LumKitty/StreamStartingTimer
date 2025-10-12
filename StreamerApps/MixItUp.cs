@@ -1,129 +1,15 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
-using System.Net.WebSockets;
-using System.Runtime;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms.Design;
-using WatsonWebsocket;
 
-namespace StreamStartingTimer {
-    public enum ConnectStatus {
-        Disabled = -1,
-        Disconnected = 0,
-        Connecting = 1,
-        Error = 2,
-        Connected = 3
-    }
-    public enum MIUPlatforms {
-        Twitch = 0,
-        YouTube = 1,
-        Trovo = 2
-    }
-
-    public static class StatusColors {
-        public static readonly Color Connecting = Color.Goldenrod;
-        public static readonly Color Error = Color.Red;
-        public static readonly Color Connected = Color.Green;
-        public static readonly Color Disabled = SystemColors.Control;
-    }
-
-    public abstract class Connector : INotifyPropertyChanged {
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void RaisePropertyChanged(string propertyName) {
-            var handler = PropertyChanged;
-            if (handler != null) {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-        public void NotifyStatusChange() {
-            RaisePropertyChanged("Enabled");
-            RaisePropertyChanged("StatusColor");
-        }
-        protected static ConnectStatus _Status = ConnectStatus.Disabled;
-        protected static Color _StatusColor = StatusColors.Disabled;
-        protected static bool _Enabled = false;
-        public ConnectStatus Status {
-            get { return _Status; }
-            set { _Status = value; }
-        }
-        public Color StatusColor {
-            get { return _StatusColor; }
-            set { _StatusColor = value; }
-        }
-        public bool Enabled {
-            get { return _Enabled; }
-            set {_Enabled = value; }
-        }
-
-        protected abstract Task _Connect();
-        protected abstract Task _Disconnect();
-        public void Connect() {
-            Task.Run(() => _Connect());
-        }
-        public void Disconnect() {
-            Task.Run(() => _Disconnect());
-        }
-    }
-
-    public class VNyanConnector : Connector {
-        public static WatsonWsClient wsClient;
-        public static CancellationToken CT = new System.Threading.CancellationToken();
-
-        void VNyanConnected(object sender, EventArgs args) {
-            StatusColor = StatusColors.Connected;
-            Status = ConnectStatus.Connected;
-            RaisePropertyChanged("StatusColor");
-        }
-        void VNyanDisconnected(object sender, EventArgs args) {
-            StatusColor = StatusColors.Error;
-            Status = ConnectStatus.Disconnected;
-            RaisePropertyChanged("StatusColor");
-        }
-
-        public void Send(string Payload) {
-            if (Status != ConnectStatus.Connected) {
-                MessageBox.Show("VNyan not connected");
-            } else {
-                wsClient.SendAsync(Payload, WebSocketMessageType.Text, CT);
-            }
-        }
-
-        protected override async Task _Connect() {
-            int n = 0;
-            Enabled = true;
-            StatusColor = StatusColors.Connecting;
-            NotifyStatusChange();
-            wsClient = new WatsonWsClient(new Uri(Shared.CurSettings.VNyanURL));
-            wsClient.KeepAliveInterval = 1000;
-            wsClient.ServerConnected += VNyanConnected;
-            wsClient.ServerDisconnected += VNyanDisconnected;
-            wsClient.Start();
-            while (!(Status != ConnectStatus.Connected) && n < 50) {
-                Thread.Sleep(100);
-                n++;
-            }
-            if (Status != ConnectStatus.Connected) {
-                StatusColor = StatusColors.Error;
-                Status = ConnectStatus.Error;
-                NotifyStatusChange();
-            }
-        }
-        protected override async Task _Disconnect() {
-            wsClient.Stop();
-            wsClient.Dispose();
-            Status = ConnectStatus.Disabled;
-            StatusColor = SystemColors.Control;
-            NotifyStatusChange();
-        }
-    }
-
+namespace StreamStartingTimer.StreamerApps {
     public class MIUConnector : Connector {
         private static ConcurrentDictionary<String, String> miuCommands = new ConcurrentDictionary<string, string>();
         private static HttpClient client = new HttpClient();
@@ -160,7 +46,7 @@ namespace StreamStartingTimer {
                 try {
                     GetResult = client.GetAsync(Shared.CurSettings.MixItUpURL + "/commands?pagesize=10&skip=" + skip.ToString()).GetAwaiter().GetResult();
                 } catch (Exception e) {
-                    Enabled=false;
+                    Enabled = false;
                     Status = ConnectStatus.Error;
                     StatusColor = StatusColors.Error;
                 }
@@ -210,6 +96,66 @@ namespace StreamStartingTimer {
                 PostResult.Dispose();
             } else {
                 Shared.AutoClosingMessageBox.Show(MiuCmdID, "Can't fire " + Payload, 10000);
+            }
+        }
+    }
+    public class MIUEvent : TimerEvent {
+
+        [CategoryAttribute("Event"), DescriptionAttribute("Event Type")]
+        public override EventType EventType { get; } = EventType.MixItUp;
+        [CategoryAttribute("Event"), DescriptionAttribute("MIU Command to run")]
+        public override string Payload { get; set; }
+        [CategoryAttribute("Event"), DescriptionAttribute("Command arguments")]
+        public string Arguments { get; set; }
+        [CategoryAttribute("Event"), DescriptionAttribute("Streaming Platform")]
+        public MIUPlatforms Platform { get; set; }
+
+        protected override async void _Fire() {
+            Shared.MIUConnector.Send(Payload, Platform.ToString(), Arguments);
+        }
+
+        public override void TestFire() {
+            Task.Run(() => _Fire());
+        }
+
+        public MIUEvent(bool _Enabled, bool _ReFire, int _Time, string _Payload, string _Arguments, MIUPlatforms _Platform) {
+            Enabled = _Enabled;
+            Refire = _ReFire;
+            Time = TimeSpan.FromSeconds(_Time);
+            Payload = _Payload;
+            Arguments = _Arguments;
+            Platform = _Platform;
+        }
+        public MIUEvent() {
+            Enabled = false;
+            Refire = false;
+            Time = TimeSpan.FromSeconds(0);
+            Payload = "";
+            Arguments = "";
+            Platform = Shared.CurSettings.MixItUpPlatform;
+        }
+        public MIUEvent(dynamic JSON) {
+            SetEnabled(JSON);
+            SetRefire(JSON);
+            SetTime(JSON);
+            SetPayload(JSON);
+            try { Arguments = JSON.Arguments.ToString(); } catch { Arguments = ""; }
+            try {
+                Platform = Shared.MIUConnector.GetMiuPlatform(JSON.Platform.ToString(), Shared.CurSettings.MixItUpPlatform);
+            } catch { Platform = Shared.CurSettings.MixItUpPlatform; }
+
+        }
+        public override JObject JSON {
+            get {
+                return new JObject(
+                    new JProperty("EventType", EventType.ToString()),
+                    new JProperty("Enabled", Enabled),
+                    new JProperty("ReFire", Refire),
+                    new JProperty("Time", Time.TotalSeconds),
+                    new JProperty("Payload", Payload),
+                    new JProperty("Arguments", Arguments),
+                    new JProperty("Platform", Platform.ToString())
+                );
             }
         }
     }

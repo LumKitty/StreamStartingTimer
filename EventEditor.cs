@@ -148,15 +148,15 @@ namespace StreamStartingTimer {
         }
 
         private void AddVNyan_Click(object sender, EventArgs e) {
-            AddEvent(new VNyanEvent());
+            AddEvent(new StreamerApps.VNyanEvent());
         }
 
         private void AddMIU_Click(object sender, EventArgs e) {
-            AddEvent(new MIUEvent());
+            AddEvent(new StreamerApps.MIUEvent());
         }
 
         private void AddExe_Click(object sender, EventArgs e) {
-            AddEvent(new ExeEvent());
+            AddEvent(new StreamerApps.ExeEvent());
         }
 
         private void EventEditor_Shown(object sender, EventArgs e) {

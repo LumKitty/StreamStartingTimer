@@ -1,15 +1,3 @@
-using CppSharp.AST;
-using Microsoft.VisualBasic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Globalization;
-using System.Net;
-using System.Net.Sockets;
-using System.Security.AccessControl;
-using WatsonWebsocket;
 using Microsoft.WindowsAPICodePack.Taskbar;
 
 namespace StreamStartingTimer {
