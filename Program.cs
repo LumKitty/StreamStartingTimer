@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing.Text;
+using System.IO.MemoryMappedFiles;
 using System.Net;
 using System.Net.WebSockets;
 using System.Security.Permissions;
@@ -16,21 +17,55 @@ using System.Windows.Forms;
 using System.Windows.Forms.Design;
 using System.Xml.Linq;
 using WatsonWebsocket;
+using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
 
 namespace StreamStartingTimer
 {
     public static class Shared {
         public static CSettings CurSettings = new CSettings();
         public static List<TimerEvent> TimerEvents = new();
-        public const string Version = "v0.7b";
+        public const string Version = "v1.0-RC1";
         public const string TimeFormat = @"mm\:ss";
         public const string MutexName = "uk.lum.streamstartingtimer";
-        
-        public static Clock frmClock;
-        public static Mutex Mutex;
+        private const string MMFName = "uk.lum.streamstartingtimer.seconds";
+        private const int MMFSize = 4;
+        private static MemoryMappedFile mmf; 
+        private static MemoryMappedViewAccessor mmfAccess = null;
+
+        public static Clock frmClock = null;
+        private static EventWaitHandle s_event;
 
         public static VNyanConnector VNyanConnector = new VNyanConnector();
         public static MIUConnector MIUConnector = new MIUConnector();
+        public static uint SecondsToGo {
+            get {
+                uint temp = 0;
+                if (mmfAccess == null) { 
+                    InitialiseMMF();
+                } 
+                mmfAccess.Read<uint>(0, out temp);
+                return temp;
+            }
+            set {
+                if (mmfAccess == null) { InitialiseMMF(); }
+                mmfAccess.Write<uint>(0, ref value);
+            }
+        }
+
+        private static void InitialiseMMF() {
+            bool Created = false;
+            try {
+                mmf = MemoryMappedFile.OpenExisting(MMFName);
+            } catch (FileNotFoundException) {
+                mmf = MemoryMappedFile.CreateOrOpen(MMFName, MMFSize);
+                Created = true;
+            }
+            mmfAccess = mmf.CreateViewAccessor(0, MMFSize);
+            if (Created) {
+                uint value = 0;
+                mmfAccess.Write<uint>(0, ref value);
+            }
+        }
 
         public static List<TimerEvent> LoadEvents(string filename) {
             int FileVersion = 0;
@@ -55,6 +90,14 @@ namespace StreamStartingTimer
             }
             return result;
         }
+        public static bool GetROStatus() {
+            if (frmClock != null) {
+                return frmClock.TimerRunning;
+            } else {
+                return false;
+            }
+        }
+        
         public static void SaveEvents(string filename, List<TimerEvent> TimerEvents) {
             JArray EventsJson = new JArray();
             foreach (TimerEvent timerEvent in TimerEvents) {
@@ -92,23 +135,24 @@ namespace StreamStartingTimer
             static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
         }
         public static bool IsSingleInstance() {
-            try {
-                Mutex.OpenExisting(Shared.MutexName);
-            } catch {
-                Shared.Mutex = new Mutex(true, Shared.MutexName);
-                return true;
+            bool created;
+            s_event = new EventWaitHandle(false,
+                EventResetMode.ManualReset, MutexName, out created);
+            if (!created) {
+                s_event.Reset();
+                s_event.Dispose();
             }
-            // More than one instance.
-            return false;
+            return created;
         }
     }
 
     class Options {
-        [Option('s', "seconds", Required = false, HelpText = "Run clock for this number of seconds")] public int? Seconds { get; set; }
-        [Option('m', "minutes", Required = false, HelpText = "Run clock for this number of minutes")] public int? Minutes { get; set; }
-        [Option('p', "past", Required = false, HelpText = "Run clock until time is this many minutes past the hour")] public int? Past { get; set; }
-        [Option('e', "events", Required = false, HelpText = "Load the startup events from this file instead of default")] public string? Events { get; set; }
-        [Option('c', "config", Required = false, HelpText = "Load the clock configuation from this file instead of default")] public string? Config { get; set; }
+        [Option('s', "seconds", Required = false, HelpText = "Run clock for this number of seconds")]                          public int?    Seconds { get; set; }
+        [Option('m', "minutes", Required = false, HelpText = "Run clock for this number of minutes")]                          public int?    Minutes { get; set; }
+        [Option('p', "past",    Required = false, HelpText = "Run clock until time is this many minutes past the hour")]       public int?    Past { get; set; }
+        [Option('e', "events",  Required = false, HelpText = "Load the startup events from this file instead of default")]     public string? Events { get; set; }
+        [Option('c', "config",  Required = false, HelpText = "Load the clock configuation from this file instead of default")] public string? Config { get; set; }
+        [Option('a', "alter",   Required = false, HelpText = "Alter the timer of an already running copy of this program")]    public bool    Alter { get; set; }
     }
 
     internal static class Program
@@ -119,18 +163,26 @@ namespace StreamStartingTimer
         [STAThread]
 
         static void Main(string[] args) {
+
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            while (!Shared.IsSingleInstance()) {
-                MessageBox.Show("Another copy of this program is already running", "Mutex Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            int StartTime = 0;
+
+            uint StartTime = 0;
+            bool AdjustingTime = false;
             string ConfigFile = Application.StartupPath + "DefaultConfig.json";
             string EventsFile = Application.StartupPath + "DefaultEvents.json";
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(o => {
+                    if (o.Alter ) {
+                        Console.WriteLine("edit");
+                        StartTime = Shared.SecondsToGo;
+                        Console.WriteLine("Clock is currently at " + StartTime.ToString() + " seconds");
+                        AdjustingTime = true;
+                    } else {
+                        Console.WriteLine("Non-edit");
+                        StartTime = 0;
+                    }
                     if (o.Events != null) {
                         EventsFile = o.Events;
                     }
@@ -145,33 +197,42 @@ namespace StreamStartingTimer
                         } else {
                             trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour + 1, (int)o.Past, 0, 0);
                         }
-                        StartTime = (int)(trgTime - DateTime.Now).TotalSeconds;
+                        StartTime = (uint)(trgTime - DateTime.Now).TotalSeconds;
                     }
                     if (o.Seconds != null) {
-                        StartTime += (int)o.Seconds;
+                        StartTime += (uint)o.Seconds;
                     }
                     if (o.Minutes != null) {
-                        StartTime += (int)o.Minutes * 60;
+                        StartTime += (uint)o.Minutes * 60;
                     }
                 }
             );
-            Shared.CurSettings = new CSettings();
-            if (!File.Exists(ConfigFile)) {
-                if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
-                    Process myProcess = new Process();
-                    myProcess.StartInfo.UseShellExecute = true;
-                    myProcess.StartInfo.FileName = "https://github.com/LumKitty/StreamStartingTimer/blob/master/README.md";
-                    myProcess.Start();
-                    myProcess.Dispose();
+            if (AdjustingTime) {
+                Shared.SecondsToGo = StartTime;
+            } else {
+                while (!Shared.IsSingleInstance()) {
+                    if (MessageBox.Show("Another copy of this program is already running", "Mutex Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Cancel) {
+                        return;
+                    }
                 }
-            } else { 
-                Shared.CurSettings.LoadConfig(ConfigFile);
+                Shared.CurSettings = new CSettings();
+                if (!File.Exists(ConfigFile)) {
+                    if (MessageBox.Show("This appears to be the first time you have run this program. Would you like to view the instructions", "Welcome", MessageBoxButtons.YesNo) == DialogResult.Yes) {
+                        Process myProcess = new Process();
+                        myProcess.StartInfo.UseShellExecute = true;
+                        myProcess.StartInfo.FileName = "https://github.com/LumKitty/StreamStartingTimer/blob/master/README.md";
+                        myProcess.Start();
+                        myProcess.Dispose();
+                    }
+                } else {
+                    Shared.CurSettings.LoadConfig(ConfigFile);
+                }
+                if (File.Exists(EventsFile)) {
+                    Shared.TimerEvents = Shared.LoadEvents(EventsFile);
+                }
+                Shared.frmClock = new Clock(StartTime, EventsFile);
+                Application.Run(Shared.frmClock);
             }
-            if (File.Exists(EventsFile)) {
-                Shared.TimerEvents = Shared.LoadEvents(EventsFile);
-            }
-            Shared.frmClock = new Clock(StartTime, EventsFile);
-            Application.Run(Shared.frmClock);
         }
     }
 

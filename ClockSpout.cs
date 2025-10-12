@@ -28,23 +28,8 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace StreamStartingTimer {
 
-    public static class OpenGLHandler {
-        /* static bool GLInitialised = false;
-        static OpenTK.GLControl.GLControl GL;
-        public static void InitGL() {
-            if (GLInitialised) { return; }
-            GL = new OpenTK.GLControl.GLControl();
-            GL.MakeCurrent();
-            GLInitialised = true;
-        }
-        public static void CloseGL() {
-            if (!GLInitialised) { return; }
-            GL.Dispose();
-        }*/
-    }
-
     public class ClockSpout : IDisposable {
-        static List<Byte[]> ClockFont = new List<Byte[]>();
+        static List<Byte[]> ClockFont;
         static int NumberWidth;
         static int NumberHeight;
         static int ColonWidth;
@@ -55,7 +40,7 @@ namespace StreamStartingTimer {
         static nint pClockTexture;
         static string PrevTime = "xx:xx";
 
-        public unsafe void GetImageFromTime(int SecondsToGo, nint pClockTexture) {
+        public void GetImageFromTime(uint SecondsToGo, nint pClockTexture) {
             string CurTime;
             int CurDigit;
             int ColonFix;
@@ -77,12 +62,10 @@ namespace StreamStartingTimer {
                     }
                     for (y = 0; y < NumberHeight; y++) {
                         if (Shared.CurSettings.Debug) {
-                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            SendImage();
                             Thread.Sleep(5);
                             Marshal.Copy(ClockFont[10], y * NumberWidth * 4, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth * 4);
-                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-                            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+                            SendImage();
                             Thread.Sleep(5);
                         }
                         Marshal.Copy(ClockFont[CurDigit], y * NumberWidth * 4, pClockTexture + ((y * ClockWidth * 4) + ((Digit * NumberWidth) + ColonFix) * 4), NumberWidth * 4);
@@ -135,6 +118,7 @@ namespace StreamStartingTimer {
             TempClockFont = new Bitmap(FontDir + "\\0.png");
             NumberWidth = TempClockFont.Width;
             NumberHeight = TempClockFont.Height;
+            ClockFont = new List<Byte[]>();
             ClockFont.Add(ConvertImage(TempClockFont, "0", false));
             for (n = 1; n < 10; n++) {
                 TempClockFont = new Bitmap(FontDir + "\\" + n.ToString() + ".png");
@@ -155,7 +139,6 @@ namespace StreamStartingTimer {
             Byte[] Colon = new byte[ClockArraySize];
             Colon = ConvertImage(TempClockFont, "colon", false);
 
-            //OpenGLHandler.InitGL();
             spoutSender = new SpoutSender();
             spoutSender.CreateSender(Shared.CurSettings.SpoutName, (uint)ClockWidth, (uint)NumberHeight, 0);
 
@@ -167,15 +150,20 @@ namespace StreamStartingTimer {
 
         }
         
-        public unsafe void UpdateTexture() {
+        public void UpdateTexture() {
 
             int i = 0;
-            GetImageFromTime(Shared.frmClock.SecondsToGo, pClockTexture);
+            GetImageFromTime(Shared.SecondsToGo, pClockTexture);
             Console.WriteLine($"Sending (i = {i})");
-            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
-            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+            
+            SendImage();
             if (i < 2) i++;
             else i = 0;
+        }
+
+        private unsafe void SendImage() {
+            spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0);
+            if (Shared.CurSettings.DoubleFrames) { spoutSender.SendImage((byte*)pClockTexture, (uint)ClockWidth, (uint)NumberHeight, 6408, false, 0); }
         }
 
         public void Dispose() {

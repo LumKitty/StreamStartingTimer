@@ -14,7 +14,7 @@ using Microsoft.WindowsAPICodePack.Taskbar;
 
 namespace StreamStartingTimer {
     public partial class Clock : Form {
-        public int SecondsToGo { get; set; }
+        //public int SecondsToGo { get; set; }
         private Binding bndTestTime;
         private ClockSpout ImageClock = null;
         private Task ImageClockUpdaterTask;
@@ -31,10 +31,10 @@ namespace StreamStartingTimer {
             cevent.Value = TimeText;
         }
 
-        public Clock(int StartTime, string EventsFile) {
+        public Clock(uint StartTime, string EventsFile) {
             InitializeComponent();
 
-            SecondsToGo = 0;
+            Shared.SecondsToGo = 0;
 
             lblVNyan.DataBindings.Add("BackColor", Shared.VNyanConnector, "StatusColor");
             lblVNyan.DataBindings.Add("Enabled", Shared.VNyanConnector, "Enabled");
@@ -50,7 +50,7 @@ namespace StreamStartingTimer {
             lblCountdown.DataBindings.Add(bndTestTime);
 
             if (StartTime > 0) {
-                SecondsToGo = StartTime;
+                Shared.SecondsToGo = StartTime;
                 QuitWhenDone = true;
             } else {
                 QuitWhenDone = false;
@@ -63,10 +63,10 @@ namespace StreamStartingTimer {
         private bool QuitWhenDone = false;
 
         private void Connect() {
-            if (Shared.CurSettings.VNyanURL.Length > 0) {
+            if (Shared.CurSettings.VNyanEnabled && Shared.CurSettings.VNyanURL != null && Shared.CurSettings.VNyanURL.Length > 0) {
                 Shared.VNyanConnector.Connect();
             }
-            if (Shared.CurSettings.MixItUpURL.Length > 0) {
+            if (Shared.CurSettings.MixItUpEnabled && Shared.CurSettings.MixItUpURL != null && Shared.CurSettings.MixItUpURL.Length > 0) {
                 Shared.MIUConnector.Connect();
             }
         }
@@ -77,13 +77,13 @@ namespace StreamStartingTimer {
             this.Size = Shared.CurSettings.Dimensions;
         }
 
-        public void StartCountdown(int CountdownTime) {
+        public void StartCountdown(uint CountdownTime) {
             if (Shared.CurSettings.SpoutEnabled) {
                 TimerRunning = true;
                 ImageClock = new ClockSpout(Shared.CurSettings.FontDir);
             }
             lblCountdown.DataBindings.Remove(bndTestTime);
-            SecondsToGo = CountdownTime;
+            Shared.SecondsToGo = CountdownTime;
             timer1.Enabled = true;
         }
 
@@ -95,7 +95,7 @@ namespace StreamStartingTimer {
             lblCountdown.Text = TimeText;
             if (Shared.CurSettings.SpoutEnabled) { ImageClock.UpdateTexture(); }
         }
-        private void UpdateClock(int SecondsToGo) {
+        private void UpdateClock(uint SecondsToGo) {
             UpdateClock(TimeSpan.FromSeconds(SecondsToGo));
         }
 
@@ -105,16 +105,20 @@ namespace StreamStartingTimer {
             int i;
             int ExtraSimultaneousEvents = 0;
 
-            SecondsToGo--;
-            UpdateClock(SecondsToGo);
+            Shared.SecondsToGo--;
+            UpdateClock(Shared.SecondsToGo);
 
-            n = toolStripProgressBar1.Maximum - SecondsToGo;
-            if (n < 0) { n = 0; }
+            n = toolStripProgressBar1.Maximum - (int)Shared.SecondsToGo;
+            if (n < 0) { 
+                n = 0; 
+            } else if (n > toolStripProgressBar1.Maximum) {
+                n = toolStripProgressBar1.Maximum;
+            }
             toolStripProgressBar1.Value = n;
 
             TaskbarManager.Instance.SetProgressValue(n, toolStripProgressBar1.Maximum);
-            if (SecondsToGo <= Shared.CurSettings.ProgressYellow) {
-                if (SecondsToGo <= Shared.CurSettings.ProgressRed) {
+            if (Shared.SecondsToGo <= Shared.CurSettings.ProgressYellow) {
+                if (Shared.SecondsToGo <= Shared.CurSettings.ProgressRed) {
                     TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Error);
                 } else {
                     TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
@@ -125,8 +129,8 @@ namespace StreamStartingTimer {
 
                 for (n = 0; n < Shared.TimerEvents.Count; n++) {
                     if (Shared.TimerEvents[n].Enabled) {
-                        if ((Shared.TimerEvents[n].Time.TotalSeconds < SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
-                            StatusLabel = "Next Event in " + (SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
+                        if ((Shared.TimerEvents[n].Time.TotalSeconds < Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                            StatusLabel = "Next Event in " + (Shared.SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
                             i = n + 1;
                             while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.TimerEvents[n].Time.TotalSeconds) {
                                 if (!Shared.TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
@@ -136,10 +140,10 @@ namespace StreamStartingTimer {
                                 StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
                             }
                             break;
-                        } else if ((Shared.TimerEvents[n].Time.TotalSeconds == SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                        } else if ((Shared.TimerEvents[n].Time.TotalSeconds == Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
                             i = n;
                             StatusLabel = "Firing event:";
-                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == SecondsToGo) {
+                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.SecondsToGo) {
                                 if (!Shared.TimerEvents[i].HasFired) {
                                     StatusLabel += " (" + Shared.TimerEvents[i].EventType + ") " + Shared.TimerEvents[i].Payload;
                                     if (!Shared.TimerEvents[i].Refire) { Shared.TimerEvents[i].HasFired = true; }
@@ -152,7 +156,7 @@ namespace StreamStartingTimer {
                     }
                 }
             lblNextEvent.Text = StatusLabel;
-            if (SecondsToGo <= 0) {
+            if (Shared.SecondsToGo <= 0) {
                 TimerRunning = false;
                 timer1.Stop();
                 if (Shared.CurSettings.SpoutEnabled) { ImageClock.Dispose(); }
@@ -172,7 +176,7 @@ namespace StreamStartingTimer {
             }
         }
 
-        private void StartTimer(int Seconds) {
+        private void StartTimer(uint Seconds) {
             StartCountdown(Seconds);
             UpdateClock(Seconds);
             btnStart.Enabled = false;
@@ -181,14 +185,14 @@ namespace StreamStartingTimer {
             btnAdd30s.Enabled = true;
             btnAdd60s.Enabled = true;
             btnEvents.Enabled = false;
-            toolStripProgressBar1.Maximum = Seconds;
+            toolStripProgressBar1.Maximum = (int)Seconds;
             toolStripProgressBar1.Value = 0;
             foreach (TimerEvent timerEvent in Shared.TimerEvents) {
                 timerEvent.HasFired = false;
             }
         }
         private void btnStart_Click(object sender, EventArgs e) {
-            StartTimer((int)Shared.CurSettings.TestTime.TotalSeconds);
+            StartTimer((uint)Shared.CurSettings.TestTime.TotalSeconds);
         }
 
         private void btnPause_Click(object sender, EventArgs e) {
@@ -216,18 +220,18 @@ namespace StreamStartingTimer {
         }
 
         private void btnAdd30s_Click(object sender, EventArgs e) {
-            SecondsToGo += 30;
+            Shared.SecondsToGo += 30;
         }
 
         private void btnAdd60s_Click(object sender, EventArgs e) {
-            SecondsToGo += 60;
+            Shared.SecondsToGo += 60;
         }
 
         private void Clock_Shown(object sender, EventArgs e) {
             Connect();
             //OpenGLHandler.InitGL();
-            if (SecondsToGo > 0) {
-                StartTimer(SecondsToGo);
+            if (Shared.SecondsToGo > 0) {
+                StartTimer(Shared.SecondsToGo);
             }
             TaskbarManager.Instance.SetProgressState(Microsoft.WindowsAPICodePack.Taskbar.TaskbarProgressBarState.NoProgress);
         }
