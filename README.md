@@ -34,9 +34,15 @@ Commandline options:
 ```-c FileName``` Load a different configuration file instead of DefaultConfig.json  
 ```-e Filename``` Load a different events file instead of DefaultEvents.json (see the events section for more details)  
 
-While the timer is running, you can use the +30s and +1m buttons to add time to the timer, e.g. if you are going to be running late
-
 If the application was started with ```-m```, ```-s``` or ```-p``` it will automatically close once the timer expired. If it is manually started it will remain open.
+
+## Adjusting the timer at runtime
+While the timer is running, you can use the +30s and +1m buttons to add time to the timer, e.g. if you are going to be running late
+The timer can also be adjusted from the commandline with the ```-a``` parameter. This alters the behaviour of ```-m``` and ```-s``` which will now make adjustments to the current time. These can be negative. ```-p``` can also be used but this will force the time to xx minutes past the hour, ignoring the current time.  
+
+Examples:  
+```StreamStartingTimer.exe -a -m 5``` - Add five minutes to an already running timer  
+```StreamStartingTimer.exe -a -s -30``` - Remove 30 seconds from an already running timer  
 
 ## Usage from StreamDeck
 1. Install [BarRaider's Advanced Launcher](https://marketplace.elgato.com/product/advanced-launcher-d9a289e4-9f61-4613-9f86-0069f5897125)
