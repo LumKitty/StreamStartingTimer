@@ -60,10 +60,9 @@ namespace StreamStartingTimer
                     if (o.Past != null) {
                         DateTime dateTime = DateTime.Now;
                         DateTime trgTime;
-                        if (dateTime.Minute < o.Past) {
-                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, (int)o.Past, 0, 0);
-                        } else {
-                            trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour + 1, (int)o.Past, 0, 0);
+                        trgTime = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, (int)o.Past, 0, 0);
+                        if (trgTime < dateTime) {
+                            trgTime = trgTime.AddHours(1);
                         }
                         StartTime = (uint)(trgTime - DateTime.Now).TotalSeconds;
                     }
