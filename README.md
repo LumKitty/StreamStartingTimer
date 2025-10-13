@@ -19,7 +19,7 @@ Events can be VNyan websockets, MixItUp commands or external executables
    - Capture Cursor: Disabled
 8. Add a Chroma key filter to the capture, leave it on the default greenscreen
 9. Click the Config button and set your desired font and size
-10. If you do not use either VNyan or MixItUp, blank out the "VNyan URL" or "MixItUp URL" settings, which will disable connection to these apps
+10. If you do not use either VNyan or MixItUp, click the config button and disable them
 11. Close the application
 12. Run StreamStartingTimer.exe -m 5 for a five minute countdown
 
