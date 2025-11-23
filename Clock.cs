@@ -33,6 +33,9 @@ namespace StreamStartingTimer {
             lblCountdown.DataBindings.Add("ForeColor", Shared.CurSettings, "FGCol");
             lblCountdown.DataBindings.Add("Font", Shared.CurSettings, "Font");
             lblCountdown.DataBindings.Add("TextAlign", Shared.CurSettings, "Alignment");
+
+            toolStripProgressBar1.DataBindings.Add("Maximum", Shared.CurSettings, "ProgressGreen");
+            
             bndTestTime = new Binding("Text", Shared.CurSettings, "TestTime");
             bndTestTime.Format += new ConvertEventHandler(TimeSpanToString);
             lblCountdown.DataBindings.Add(bndTestTime);
@@ -96,53 +99,53 @@ namespace StreamStartingTimer {
             Shared.SecondsToGo--;
             UpdateClock(Shared.SecondsToGo);
 
-            n = toolStripProgressBar1.Maximum - (int)Shared.SecondsToGo;
-            if (n < 0) { 
-                n = 0; 
-            } else if (n > toolStripProgressBar1.Maximum) {
-                n = toolStripProgressBar1.Maximum;
-            }
-            toolStripProgressBar1.Value = n;
-
-            TaskbarManager.Instance.SetProgressValue(n, toolStripProgressBar1.Maximum);
-            if (Shared.SecondsToGo <= Shared.CurSettings.ProgressYellow) {
-                if (Shared.SecondsToGo <= Shared.CurSettings.ProgressRed) {
-                    TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Error);
+            if ((Shared.SecondsToGo >= 0) && (Shared.SecondsToGo <= Shared.CurSettings.ProgressGreen) ) {
+                n = Shared.CurSettings.ProgressGreen - (int)Shared.SecondsToGo;
+                toolStripProgressBar1.Value = n;
+                TaskbarManager.Instance.SetProgressValue(n, Shared.CurSettings.ProgressGreen);
+                if (Shared.SecondsToGo <= Shared.CurSettings.ProgressYellow) {
+                    if (Shared.SecondsToGo <= Shared.CurSettings.ProgressRed) {
+                        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Error);
+                    } else {
+                        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
+                    }
                 } else {
-                    TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
+                    //TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
                 }
+                
             } else {
-                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+                toolStripProgressBar1.Value = 0;
             }
 
-                for (n = 0; n < Shared.TimerEvents.Count; n++) {
-                    if (Shared.TimerEvents[n].Enabled) {
-                        if ((Shared.TimerEvents[n].Time.TotalSeconds < Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
-                            StatusLabel = "Next Event in " + (Shared.SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
-                            i = n + 1;
-                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.TimerEvents[n].Time.TotalSeconds) {
-                                if (!Shared.TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
-                                i++;
-                            }
-                            if (ExtraSimultaneousEvents > 0) {
-                                StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
-                            }
-                            break;
-                        } else if ((Shared.TimerEvents[n].Time.TotalSeconds == Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
-                            i = n;
-                            StatusLabel = "Firing event:";
-                            while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.SecondsToGo) {
-                                if (!Shared.TimerEvents[i].HasFired) {
-                                    StatusLabel += " (" + Shared.TimerEvents[i].EventType + ") " + Shared.TimerEvents[i].Payload;
-                                    if (!Shared.TimerEvents[i].Refire) { Shared.TimerEvents[i].HasFired = true; }
-                                    Shared.TimerEvents[i].Fire();
-                                }
-                                i++;
-                            }
-                            break;
+            for (n = 0; n < Shared.TimerEvents.Count; n++) {
+                if (Shared.TimerEvents[n].Enabled) {
+                    if ((Shared.TimerEvents[n].Time.TotalSeconds < Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                        StatusLabel = "Next Event in " + (Shared.SecondsToGo - Shared.TimerEvents[n].Time.TotalSeconds) + "s: " + Shared.TimerEvents[n].Time.ToString(Shared.TimeFormat) + " (" + Shared.TimerEvents[n].EventType + ") " + Shared.TimerEvents[n].Payload;
+                        i = n + 1;
+                        while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.TimerEvents[n].Time.TotalSeconds) {
+                            if (!Shared.TimerEvents[i].HasFired) { ExtraSimultaneousEvents++; }
+                            i++;
                         }
+                        if (ExtraSimultaneousEvents > 0) {
+                            StatusLabel += " +" + ExtraSimultaneousEvents.ToString();
+                        }
+                        break;
+                    } else if ((Shared.TimerEvents[n].Time.TotalSeconds == Shared.SecondsToGo) && !Shared.TimerEvents[n].HasFired) {
+                        i = n;
+                        StatusLabel = "Firing event:";
+                        while (i < Shared.TimerEvents.Count && Shared.TimerEvents[i].Time.TotalSeconds == Shared.SecondsToGo) {
+                            if (!Shared.TimerEvents[i].HasFired) {
+                                StatusLabel += " (" + Shared.TimerEvents[i].EventType + ") " + Shared.TimerEvents[i].Payload;
+                                if (!Shared.TimerEvents[i].Refire) { Shared.TimerEvents[i].HasFired = true; }
+                                Shared.TimerEvents[i].Fire();
+                            }
+                            i++;
+                        }
+                        break;
                     }
                 }
+            }
             lblNextEvent.Text = StatusLabel;
             if (Shared.SecondsToGo <= 0) {
                 TimerRunning = false;
@@ -173,7 +176,7 @@ namespace StreamStartingTimer {
             btnAdd30s.Enabled = true;
             btnAdd60s.Enabled = true;
             btnEvents.Enabled = false;
-            toolStripProgressBar1.Maximum = (int)Seconds;
+            //toolStripProgressBar1.Maximum = (int)Seconds;
             toolStripProgressBar1.Value = 0;
             foreach (TimerEvent timerEvent in Shared.TimerEvents) {
                 timerEvent.HasFired = false;

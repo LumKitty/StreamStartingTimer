@@ -26,6 +26,7 @@ namespace StreamStartingTimer {
         public const bool SpoutEnabled = false;
         public const string SpoutName = "StreamStartingTimer";
         public static readonly string FontDir = Application.StartupPath + "\\DefaultFont";
+        public const int ProgressGreen = 300;
         public const int ProgressYellow = 60;
         public const int ProgressRed = 30;
         public const bool VNyanEnabled = true;
@@ -53,6 +54,10 @@ namespace StreamStartingTimer {
         [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Display 04:20 or   4:20 (does not take effect until restarting the timer)")]
         [DisplayName("Show Leading Zero")]
         public virtual bool ShowLeadingZero { get; set; }
+
+        [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Progress bar starts counting up when this many seconds are left")]
+        [DisplayName("Progress bar green time")]
+        public virtual int ProgressGreen { get; set; }
 
         [CategoryAttribute("Clock Appearance"), DescriptionAttribute("Progress bar changes to yellow when this many seconds are left")]
         [DisplayName("Progress bar yellow time")]
@@ -127,6 +132,7 @@ namespace StreamStartingTimer {
             SpoutEnabled = Defaults.SpoutEnabled;
             SpoutName = Defaults.SpoutName;
             FontDir = Defaults.FontDir;
+            ProgressGreen = Defaults.ProgressGreen;
             ProgressYellow = Defaults.ProgressYellow;
             ProgressRed = Defaults.ProgressRed;
             DoubleFrames = Defaults.DoubleFrames;
@@ -173,6 +179,7 @@ namespace StreamStartingTimer {
                 try { SpoutName = Config.SpoutName;           if (SpoutName  == null) { throw new Exception("null"); }     } catch { MissingSettings += ", " + GetDisplayName("SpoutName");       SpoutName = Defaults.SpoutName; }
                 try { FontDir = Config.FontDir;               if (FontDir    == null) { throw new Exception("null"); }     } catch { MissingSettings += ", " + GetDisplayName("FontDir");         FontDir = Defaults.FontDir; }
                 try { DoubleFrames = Config.SpoutEnabled;                                                                  } catch { MissingSettings += ", " + GetDisplayName("DoubleFrames");    DoubleFrames = Defaults.DoubleFrames; }
+                try { ProgressYellow = Config.ProgressGreen;                                                               } catch { MissingSettings += ", " + GetDisplayName("ProgressGreen");   ProgressGreen = Defaults.ProgressGreen; }
                 try { ProgressYellow = Config.ProgressYellow;                                                              } catch { MissingSettings += ", " + GetDisplayName("ProgressYellow");  ProgressYellow = Defaults.ProgressYellow; }
                 try { ProgressRed = Config.ProgressRed;                                                                    } catch { MissingSettings += ", " + GetDisplayName("ProgressRed");     ProgressRed = Defaults.ProgressRed; }
 
@@ -209,6 +216,7 @@ namespace StreamStartingTimer {
                 new JProperty("SpoutEnabled", SpoutEnabled),
                 new JProperty("SpoutName", SpoutName),
                 new JProperty("FontDir", FontDir),
+                new JProperty("ProgressGreen", ProgressGreen),
                 new JProperty("ProgressYellow", ProgressYellow),
                 new JProperty("ProgressRed", ProgressRed)
             );
@@ -220,14 +228,20 @@ namespace StreamStartingTimer {
             TempSettings.BGCol = this.BGCol;
             TempSettings.FGCol = this.FGCol;
             TempSettings.Alignment = this.Alignment;
-            TempSettings.Location = this.Location;
-            TempSettings.Dimensions = this.Dimensions;
+            TempSettings.ShowLeadingZero = this.ShowLeadingZero;
             TempSettings.VNyanURL = this.VNyanURL;
             TempSettings.MixItUpURL = this.MixItUpURL;
             TempSettings.MixItUpPlatform = this.MixItUpPlatform;
             TempSettings.TestTime = this.TestTime;
+            TempSettings.Location = this.Location;
+            TempSettings.Dimensions = this.Dimensions;
             TempSettings.SpoutEnabled = this.SpoutEnabled;
             TempSettings.FontDir = this.FontDir;
+            TempSettings.ProgressGreen = this.ProgressGreen;
+            TempSettings.ProgressYellow = this.ProgressYellow;
+            TempSettings.ProgressRed = this.ProgressRed;
+            TempSettings.DoubleFrames = this.DoubleFrames;
+            TempSettings.Debug = this.Debug;
             return TempSettings;
         }
     }
@@ -367,6 +381,16 @@ namespace StreamStartingTimer {
                     MessageBox.Show("This setting will not take effect until you restart the timer", GetDisplayName("FontDir"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 _Settings.FontDir = value;
+            }
+        }
+
+        public override int ProgressGreen {
+            get { return _Settings.ProgressGreen; }
+            set {
+                if (Shared.GetROStatus()) {
+                    MessageBox.Show("This setting will not take effect until you restart the timer", GetDisplayName("FontDir"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                _Settings.ProgressGreen = value;
             }
         }
 

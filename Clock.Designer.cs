@@ -181,6 +181,8 @@
             // 
             toolStripProgressBar1.Name = "toolStripProgressBar1";
             toolStripProgressBar1.Size = new Size(100, 16);
+            toolStripProgressBar1.Style = ProgressBarStyle.Continuous;
+            toolStripProgressBar1.Value = 50;
             // 
             // lblNextEvent
             // 
@@ -213,6 +215,7 @@
             Controls.Add(lblCountdown);
             Controls.Add(statusStrip1);
             Controls.Add(toolStrip1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
             Name = "Clock";
             Text = "Stream Startup Timer";
