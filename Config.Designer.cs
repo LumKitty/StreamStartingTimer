@@ -23,6 +23,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Config));
             propertyGrid1 = new PropertyGrid();
             btnOk = new Button();
             btnCancel = new Button();
@@ -110,13 +111,20 @@
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
             ClientSize = new Size(488, 408);
+            ControlBox = false;
             Controls.Add(btnLoad);
             Controls.Add(btnSave);
             Controls.Add(btnCancel);
             Controls.Add(btnOk);
             Controls.Add(propertyGrid1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MaximizeBox = false;
+            MinimizeBox = false;
             Name = "Config";
-            Text = "Config";
+            ShowInTaskbar = false;
+            SizeGripStyle = SizeGripStyle.Show;
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Stream Starting Timer - Configuration";
             Load += Config_Load;
             ResumeLayout(false);
         }

@@ -23,6 +23,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EventEditor));
             propertyGrid1 = new PropertyGrid();
             listView1 = new ListView();
             Enabled = new ColumnHeader();
@@ -249,10 +250,15 @@
             Controls.Add(btnCancel);
             Controls.Add(btnSave);
             Controls.Add(btnLoad);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MaximizeBox = false;
             MinimizeBox = false;
             MinimumSize = new Size(799, 200);
             Name = "EventEditor";
-            Text = "EventEditor";
+            ShowInTaskbar = false;
+            SizeGripStyle = SizeGripStyle.Show;
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Stream Starting Timer - Event Editor";
             Shown += EventEditor_Shown;
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);

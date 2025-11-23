@@ -357,7 +357,7 @@ namespace StreamStartingTimer {
         public override bool SpoutEnabled {
             get { return _Settings.SpoutEnabled; }
             set {
-                if (Shared.GetROStatus()) {
+                if (Shared.GetROStatus() && _Settings.SpoutEnabled != value) {
                     MessageBox.Show("Cannot change this setting while the timer is running", GetDisplayName("SpoutEnabled"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 } else {
                     _Settings.SpoutEnabled = value;
@@ -367,7 +367,7 @@ namespace StreamStartingTimer {
         public override string SpoutName {
             get { return _Settings.SpoutName; }
             set {
-                if (Shared.GetROStatus()) {
+                if (Shared.GetROStatus() && _Settings.SpoutName != value) {
                     MessageBox.Show("This setting will not take effect until you restart the timer", GetDisplayName("SpoutName"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
                 } 
@@ -377,7 +377,7 @@ namespace StreamStartingTimer {
         public override string FontDir {
             get { return _Settings.FontDir; }
             set {
-                if (Shared.GetROStatus()) {
+                if (Shared.GetROStatus() && _Settings.FontDir != value) {
                     MessageBox.Show("This setting will not take effect until you restart the timer", GetDisplayName("FontDir"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 _Settings.FontDir = value;
@@ -387,10 +387,9 @@ namespace StreamStartingTimer {
         public override int ProgressGreen {
             get { return _Settings.ProgressGreen; }
             set {
-                if (Shared.GetROStatus()) {
-                    MessageBox.Show("This setting will not take effect until you restart the timer", GetDisplayName("FontDir"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                if (_Settings.ProgressGreen == value) { return; }
                 _Settings.ProgressGreen = value;
+                RaisePropertyChanged("ProgressGreen");
             }
         }
 
