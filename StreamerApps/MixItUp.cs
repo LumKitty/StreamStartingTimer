@@ -84,8 +84,13 @@ namespace StreamStartingTimer.StreamerApps {
             string MiuCmdID = GetMiuCmdId(Payload);
             //if (GetMiuCmdId() == "") { Shared.InitMIU(Shared.CurSettings.MixItUpURL); }
             if (MiuCmdID != "") {
-                string Content = "{ \"Platform\": \"" + Platform + "\", \"Arguments\": \"" + Arguments + "\" }";
-                var jsonData = new StringContent(Content, Encoding.ASCII);
+                //string Content = "{ \"Platform\": \"" + Platform + "\", \"Arguments\": \"" + Arguments + "\" }";
+                JObject Content = new JObject(
+                    new JProperty("Platform", Platform),
+                    new JProperty("Arguments", Arguments)
+                );
+
+                var jsonData = new StringContent(JsonConvert.SerializeObject(Content, Shared.SerialSettings), Encoding.ASCII);
                 jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                 string Response = "";
                 int httpStatus = 0;

@@ -9,7 +9,7 @@ namespace StreamStartingTimer {
     public static class Shared {
         public static CSettings CurSettings = new CSettings();
         public static List<TimerEvent> TimerEvents = new();
-        public const string Version = "v1.0-RC2";
+        public const string Version = "v1.0-RC3";
         public const string TimeFormat = @"mm\:ss";
         public const string MutexName = "uk.lum.streamstartingtimer";
         private const string MMFName = "uk.lum.streamstartingtimer.seconds";
@@ -22,6 +22,12 @@ namespace StreamStartingTimer {
 
         public static VNyanConnector VNyanConnector = new VNyanConnector();
         public static MIUConnector MIUConnector = new MIUConnector();
+        public static JsonSerializerSettings SerialSettings = new JsonSerializerSettings();
+
+        static Shared() {
+            SerialSettings.StringEscapeHandling = StringEscapeHandling.EscapeNonAscii;
+        }
+
         public static int SecondsToGo {
             get {
                 int temp = 0;
